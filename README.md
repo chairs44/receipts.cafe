@@ -23,9 +23,9 @@ The MacBook Air is not required for normal printing.
 | Vercel project | `receipt` |
 | Project ID | `prj_6NMgc4lea1LVK1lTvEigmrOGmrZh` |
 | Team ID | `team_iZEAAYwSLBCiQH7XCdZvRL6H` |
-| Latest checked deployment | `dpl_2qSwuLEg6cyT7TeE7LD6BaHqM5Jy` |
+| GitHub repo | `chairs44/receipt.cafe` |
 | Runtime region | `iad1` |
-| Source | Vercel CLI deploy from this local folder |
+| Source | GitHub-connected Vercel deploys from `main` |
 
 ## Runtime Behavior
 
@@ -86,11 +86,12 @@ This project is a small static site plus Vercel serverless functions. `npm run d
 
 ```bash
 npm install
-cp .env.example .env.local
 npm run dev
 ```
 
 The local preview server stubs `/api/status` and `/api/submit`; it does not write to Redis or print.
+
+If you need real Vercel/Redis development locally, create an ignored `.env.local` file manually. Never commit `.env*` files.
 
 ## Vercel Setup
 
@@ -107,28 +108,18 @@ The current Vercel project is named:
 receipt
 ```
 
-Before production deploy, create/connect an Upstash Redis resource in Vercel Marketplace and add the env vars above.
+The existing project is connected to GitHub:
 
-Recommended order:
+```text
+https://github.com/chairs44/receipt.cafe
+```
 
-1. Create/import the `receipt-drop` project in Vercel.
-2. Add an Upstash Redis marketplace resource to that project.
-3. Confirm these env vars exist in Vercel: `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`.
-4. Add `POLL_TOKEN` as a secret env var.
-5. Add the safety env vars from the list above.
-6. Deploy.
+Vercel production deploys from `main`. Existing Vercel env vars should remain attached to the `receipt` project.
 
-CLI path:
+Manual fallback deploy path:
 
 ```bash
 cd /Users/davidsutrin/Library/Developer/receipt-drop
-npx vercel link --yes --project receipt --scope davidsutrin
-npx vercel env add POLL_TOKEN production
-npx vercel env add PRINT_ENABLED production
-npx vercel env add RATE_LIMIT_MAX production
-npx vercel env add RATE_LIMIT_WINDOW_SECONDS production
-npx vercel env add DAILY_LIMIT production
-npx vercel env add MESSAGE_MAX_CHARS production
 npx vercel --prod
 ```
 
