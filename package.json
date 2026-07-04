@@ -1,0 +1,15 @@
+{
+  "name": "receipt-drop",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node scripts/v0-preview-server.js",
+    "vercel:dev": "npx vercel dev",
+    "build": "echo static site",
+    "check": "node --check api/submit.js && node --check api/poll.js && node --check api/heartbeat.js && node --check api/status.js && node --check public/app.js && node --check scripts/v0-preview-server.js"
+  },
+  "dependencies": {
+    "@upstash/redis": "^1.35.3"
+  }
+}

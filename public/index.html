@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex,nofollow">
+    <title>Anonymous Receipt Printer Message</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <div id="printer-state" class="printer-state offline" aria-live="polite">
+      <span class="printer-dot" aria-hidden="true"></span>
+      <span id="printer-state-label">Printer Offline</span>
+    </div>
+    <main class="shell">
+      <section class="card" aria-label="Receipt message form">
+        <div class="mast">
+          <h1 aria-label="Send An Anonymous Message Directly To My Receipt Printer">
+            Send An Anonymous Message Directly To My Receipt Printer
+          </h1>
+        </div>
+
+        <form id="drop-form">
+          <label class="trap">
+            Website
+            <input id="website" name="website" tabindex="-1" autocomplete="off">
+          </label>
+          <textarea id="message" name="message" maxlength="240" placeholder="Write something..."></textarea>
+          <div class="meta">
+            <span id="chars">240 chars left</span>
+            <span>2 messages / hour</span>
+          </div>
+          <button id="send" type="submit">Send</button>
+          <div id="status" class="status" role="status" aria-live="polite"></div>
+        </form>
+      </section>
+    </main>
+    <footer class="site-footer">
+      <a href="https://www.davidsutrin.xyz/" rel="me">www.davidsutrin.xyz</a>
+    </footer>
+    <script>
+      window.va = window.va || function () {
+        (window.vaq = window.vaq || []).push(arguments);
+      };
+    </script>
+    <script defer src="/_vercel/insights/script.js"></script>
+    <script src="/app.js"></script>
+  </body>
+</html>
