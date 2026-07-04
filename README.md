@@ -23,7 +23,7 @@ The MacBook Air is not required for normal printing.
 | Vercel project | `receipt` |
 | Project ID | `prj_6NMgc4lea1LVK1lTvEigmrOGmrZh` |
 | Team ID | `team_iZEAAYwSLBCiQH7XCdZvRL6H` |
-| GitHub repo | `chairs44/receipt.cafe` |
+| GitHub repo | `chairs44/receipts.cafe` |
 | Runtime region | `iad1` |
 | Source | GitHub-connected Vercel deploys from `main` |
 
@@ -111,7 +111,7 @@ receipt
 The existing project is connected to GitHub:
 
 ```text
-https://github.com/chairs44/receipt.cafe
+https://github.com/chairs44/receipts.cafe
 ```
 
 Vercel production deploys from `main`. Existing Vercel env vars should remain attached to the `receipt` project.
