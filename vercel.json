@@ -4,6 +4,19 @@
       "maxDuration": 10
     }
   },
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "receipt-ochre.vercel.app"
+        }
+      ],
+      "destination": "https://receipts.cafe/:path*",
+      "permanent": true
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",
@@ -16,4 +29,3 @@
     }
   ]
 }
-
