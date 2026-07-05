@@ -19,7 +19,7 @@ The MacBook Air is not required for normal printing.
 
 | Item | Value |
 |---|---|
-| Public URL | `https://receipt-ochre.vercel.app` |
+| Public URL | `https://receipts.cafe` |
 | Vercel project | `receipt` |
 | Project ID | `prj_6NMgc4lea1LVK1lTvEigmrOGmrZh` |
 | Team ID | `team_iZEAAYwSLBCiQH7XCdZvRL6H` |
@@ -43,7 +43,7 @@ Future public-message printouts are planned to become rendered square images. Th
 
 Planned constraints:
 
-- applies only to public messages from `https://receipt-ochre.vercel.app`
+- applies only to public messages from the canonical public site, `https://receipts.cafe`
 - target size is `72mm x 72mm`
 - rendering happens locally in the old MBP poller
 - Vercel should continue queueing plain text
@@ -155,7 +155,7 @@ Check status from the MacBook Air:
 ssh ds-mbp 'launchctl print gui/$(id -u)/com.davidsutrin.receipt-drop-poller'
 ssh ds-mbp 'lpstat -p EPSON_TM_T88V -a EPSON_TM_T88V -d'
 ssh ds-mbp 'tail -40 ~/Library/Logs/receipt-drop/poller.out.log'
-curl -s https://receipt-ochre.vercel.app/api/status
+curl -s https://receipts.cafe/api/status
 ```
 
 The poller config lives at:
@@ -167,7 +167,7 @@ The poller config lives at:
 Expected values, with the token redacted:
 
 ```text
-RECEIPT_DROP_URL=https://receipt-ochre.vercel.app
+RECEIPT_DROP_URL=https://receipts.cafe
 RECEIPT_DROP_TOKEN=[redacted POLL_TOKEN]
 RECEIPT_DROP_INTERVAL=15
 RECEIPT_DROP_PRINTER=EPSON_TM_T88V
