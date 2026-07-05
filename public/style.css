@@ -198,19 +198,7 @@ button:disabled {
 }
 
 @media (max-width: 520px) {
-.site-header {
-  display: flex;
-  justify-content: center;
-  padding: 28px 24px 0;
-}
-
-.site-logo {
-  width: 220px;
-  max-width: 60vw;
-  filter: invert(1);
-}
-
-.shell {
+  .shell {
     padding-inline: 0;
   }
 
