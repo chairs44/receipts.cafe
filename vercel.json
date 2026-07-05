@@ -6,6 +6,17 @@
   },
   "redirects": [
     {
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "receipt-ochre.vercel.app"
+        }
+      ],
+      "destination": "https://receipts.cafe/",
+      "permanent": true
+    },
+    {
       "source": "/:path*",
       "has": [
         {
