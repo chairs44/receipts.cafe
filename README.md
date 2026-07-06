@@ -1,6 +1,6 @@
-# Receipt Drop
+# receipt.cafe
 
-Tiny public Vercel site for sending short messages to the receipt printer.
+Tiny public Vercel site for sending short messages to David's receipt printer.
 
 ## Architecture
 
@@ -32,7 +32,7 @@ The MacBook Air is not required for normal printing.
 - Public submissions are accepted by `/api/submit`.
 - Valid messages are pushed into the Redis list `receipt-drop:queue`.
 - The old MBP LaunchAgent polls `/api/poll` with `POLL_TOKEN`.
-- `/api/poll` uses Redis `lpop`, so a message is removed once the poller requests it.
+- `/api/poll` uses Redis `lmove` to claim a message into `receipt-drop:inflight`; the poller calls `/api/ack` only after `lp` succeeds.
 - To avoid losing messages, the MBP poller checks the local CUPS queue and USB printer presence before polling.
 - If the printer is unplugged, powered off, or not visible over USB, the poller sends an offline heartbeat and leaves messages in Redis.
 - `/api/status` reads the heartbeat and powers the public "Printer Online/Offline" indicator.
@@ -47,7 +47,7 @@ Planned constraints:
 - target size is `72mm x 72mm`
 - rendering happens locally in the old MBP poller
 - Vercel should continue queueing plain text
-- all allowed `240` character messages must fit
+- all allowed `300` character messages must fit
 - design should be message-first
 - timestamp info stays, with final styling TBD
 - public website does not show a receipt preview for now
@@ -56,11 +56,11 @@ Wait for reference images and final template direction before implementing this.
 
 ## Safety Defaults
 
-- `240` character maximum
+- `300` character maximum
 - plain text only
 - links rejected
 - honeypot field for simple bots
-- 2 messages per IP per hour
+- 3 messages per IP per hour
 - 30 total messages per day
 - duplicate messages rejected for 6 hours
 - print queue is pulled by a private token
@@ -72,10 +72,10 @@ UPSTASH_REDIS_REST_URL
 UPSTASH_REDIS_REST_TOKEN
 POLL_TOKEN
 PRINT_ENABLED=true
-RATE_LIMIT_MAX=2
+RATE_LIMIT_MAX=3
 RATE_LIMIT_WINDOW_SECONDS=3600
 DAILY_LIMIT=30
-MESSAGE_MAX_CHARS=240
+MESSAGE_MAX_CHARS=300
 ```
 
 Use a long random value for `POLL_TOKEN`.
@@ -89,7 +89,7 @@ npm install
 npm run dev
 ```
 
-The local preview server stubs `/api/status` and `/api/submit`; it does not write to Redis or print.
+The local preview server stubs the public and worker API routes; it does not write to Redis or print.
 
 If you need real Vercel/Redis development locally, create an ignored `.env.local` file manually. Never commit `.env*` files.
 
@@ -127,10 +127,10 @@ Use these values:
 
 ```text
 PRINT_ENABLED=true
-RATE_LIMIT_MAX=2
+RATE_LIMIT_MAX=3
 RATE_LIMIT_WINDOW_SECONDS=3600
 DAILY_LIMIT=30
-MESSAGE_MAX_CHARS=240
+MESSAGE_MAX_CHARS=300
 ```
 
 ## Old MBP Printer Poller

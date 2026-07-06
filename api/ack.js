@@ -1,7 +1,8 @@
 import { Redis } from "@upstash/redis";
 
-const QUEUE_KEY = "receipt-drop:queue";
 const INFLIGHT_KEY = "receipt-drop:inflight";
+const PRINTED_LOG_KEY = "receipt-drop:printed";
+const LAST_PRINTED_KEY = "receipt-drop:last-printed";
 
 let redis;
 
@@ -44,24 +45,24 @@ export default async function handler(req, res) {
   }
 
   try {
-    const item = await getRedis().lmove(QUEUE_KEY, INFLIGHT_KEY, "LEFT", "RIGHT");
-    const parsedItem =
-      typeof item === "string"
-        ? JSON.parse(item)
-        : item;
-    return res.status(200).json({
-      ok: true,
-      item: parsedItem || null,
-      rawItem: item || null,
-    });
+    const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
+    const item = body.item;
+    if (!item?.id) {
+      return res.status(400).json({ ok: false, error: "Missing item." });
+    }
+
+    const serialized = typeof body.rawItem === "string" ? body.rawItem : JSON.stringify(item);
+    const printedAt = new Date().toISOString();
+    const redisClient = getRedis();
+    const removed = await redisClient.lrem(INFLIGHT_KEY, 1, serialized);
+
+    await redisClient.lpush(PRINTED_LOG_KEY, JSON.stringify({ ...item, printedAt }));
+    await redisClient.ltrim(PRINTED_LOG_KEY, 0, 199);
+    await redisClient.set(LAST_PRINTED_KEY, printedAt, { ex: 7 * 24 * 60 * 60 });
+
+    return res.status(200).json({ ok: true, removed });
   } catch (error) {
-    console.error("receipt poll failed", {
-      message: error?.message,
-      hasIntegrationUrl: Boolean(process.env.UPSTASH_REDIS_REST_KV_REST_API_URL),
-      hasIntegrationToken: Boolean(process.env.UPSTASH_REDIS_REST_KV_REST_API_TOKEN),
-      hasAliasUrl: Boolean(process.env.UPSTASH_REDIS_REST_URL),
-      hasAliasToken: Boolean(process.env.UPSTASH_REDIS_REST_TOKEN),
-    });
-    return res.status(500).json({ ok: false, error: "Queue unavailable." });
+    console.error("receipt ack failed", { message: error?.message });
+    return res.status(500).json({ ok: false, error: "Ack failed." });
   }
 }

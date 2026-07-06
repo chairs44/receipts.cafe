@@ -6,7 +6,7 @@ const send = document.querySelector("#send");
 const status = document.querySelector("#status");
 const printerState = document.querySelector("#printer-state");
 const printerStateLabel = document.querySelector("#printer-state-label");
-const maxChars = 240;
+const maxChars = 300;
 let printerOnline = false;
 
 function setStatus(text, kind = "info") {

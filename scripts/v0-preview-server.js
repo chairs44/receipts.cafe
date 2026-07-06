@@ -61,6 +61,24 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (req.method === "GET" && url.pathname === "/api/admin") {
+    json(res, 200, {
+      ok: true,
+      queueDepth: 0,
+      inFlightDepth: 0,
+      failedDepth: 0,
+      printedDepth: 0,
+      lastHeartbeat: new Date().toISOString(),
+      heartbeatFresh: true,
+      printerOnline: true,
+      printer: "EPSON_TM_T88V",
+      lastPrintedAt: null,
+      lastFailureAt: null,
+      preview: true,
+    });
+    return;
+  }
+
   if (req.method === "POST" && url.pathname === "/api/submit") {
     req.resume();
     json(res, 200, {
@@ -68,6 +86,17 @@ const server = http.createServer(async (req, res) => {
       queued: true,
       preview: true,
       message: "v0 preview mode: message was not sent to the printer.",
+    });
+    return;
+  }
+
+  if (req.method === "POST" && ["/api/poll", "/api/ack", "/api/fail", "/api/heartbeat"].includes(url.pathname)) {
+    req.resume();
+    json(res, 200, {
+      ok: true,
+      item: null,
+      preview: true,
+      message: "v0 preview mode: worker route is stubbed.",
     });
     return;
   }
@@ -81,5 +110,5 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(port, "0.0.0.0", () => {
-  console.log(`Receipt Drop preview running at http://localhost:${port}`);
+  console.log(`receipt.cafe preview running at http://localhost:${port}`);
 });

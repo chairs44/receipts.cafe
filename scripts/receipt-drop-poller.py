@@ -41,7 +41,7 @@ def wrap(text, width=32):
 
 def render(item):
     lines = [
-        center("RECEIPT DROP"),
+        center("RECEIPT.CAFE"),
         "-" * 32,
         *wrap(item["message"]),
         "-" * 32,
@@ -52,10 +52,10 @@ def render(item):
     return "\n".join(lines)
 
 
-def poll():
+def post_json(path, body):
     req = Request(
-        f"{URL}/api/poll",
-        data=b"{}",
+        f"{URL}{path}",
+        data=json.dumps(body).encode("utf-8"),
         headers={
             "Authorization": f"Bearer {TOKEN}",
             "Content-Type": "application/json",
@@ -64,6 +64,26 @@ def poll():
     )
     with urlopen(req, timeout=20) as response:
         return json.loads(response.read().decode("utf-8"))
+
+
+def poll():
+    return post_json("/api/poll", {})
+
+
+def ack(item, raw_item=None):
+    return post_json("/api/ack", {"item": item, "rawItem": raw_item})
+
+
+def fail(item, reason, raw_item=None, requeue=True):
+    return post_json(
+        "/api/fail",
+        {
+            "item": item,
+            "rawItem": raw_item,
+            "reason": reason,
+            "requeue": requeue,
+        },
+    )
 
 
 def printer_online():
@@ -97,20 +117,13 @@ def printer_online():
 
 
 def send_heartbeat(online):
-    req = Request(
-        f"{URL}/api/heartbeat",
-        data=json.dumps({
+    post_json(
+        "/api/heartbeat",
+        {
             "printerOnline": online,
             "printer": PRINTER,
-        }).encode("utf-8"),
-        headers={
-            "Authorization": f"Bearer {TOKEN}",
-            "Content-Type": "application/json",
         },
-        method="POST",
     )
-    with urlopen(req, timeout=20) as response:
-        response.read()
 
 
 def print_text(text):
@@ -129,6 +142,25 @@ def print_text(text):
             )
     finally:
         temp.unlink(missing_ok=True)
+
+
+def print_and_ack(item, raw_item=None):
+    try:
+        print_text(render(item))
+    except Exception as exc:
+        reason = f"{type(exc).__name__}: {exc}"
+        print(f"print failed for {item.get('id')}: {reason}", flush=True)
+        try:
+            fail(item, reason, raw_item)
+        except Exception as fail_exc:
+            print(f"fail endpoint error for {item.get('id')}: {fail_exc}", flush=True)
+        return
+
+    try:
+        ack(item, raw_item)
+        print(f"printed and acked {item.get('id')}", flush=True)
+    except Exception as ack_exc:
+        print(f"ack endpoint error for {item.get('id')}: {ack_exc}", flush=True)
 
 
 def main():
@@ -150,7 +182,7 @@ def main():
             data = poll()
             item = data.get("item")
             if item:
-                print_text(render(item))
+                print_and_ack(item, data.get("rawItem"))
                 time.sleep(8)
             else:
                 time.sleep(INTERVAL)

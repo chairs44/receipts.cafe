@@ -72,8 +72,8 @@ export default async function handler(req, res) {
     const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
     if (body.website) return res.status(200).json({ ok: true });
 
-    const maxChars = settingInt("MESSAGE_MAX_CHARS", 240);
-    const rateMax = settingInt("RATE_LIMIT_MAX", 2);
+    const maxChars = settingInt("MESSAGE_MAX_CHARS", 300);
+    const rateMax = settingInt("RATE_LIMIT_MAX", 3);
     const rateWindow = settingInt("RATE_LIMIT_WINDOW_SECONDS", 3600);
     const dailyLimit = settingInt("DAILY_LIMIT", 30);
     const sanitized = sanitizeMessage(body.message, maxChars);
