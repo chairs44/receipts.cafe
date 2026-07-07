@@ -173,3 +173,36 @@ RECEIPT_DROP_INTERVAL=15
 RECEIPT_DROP_PRINTER=EPSON_TM_T88V
 RECEIPT_DROP_PRINT_MODE=local
 ```
+
+## Archive
+
+The old MBP poller keeps the authoritative private archive locally:
+
+```text
+/Users/ddd/Library/Application Support/receipt.cafe/archive
+```
+
+Archive contents:
+
+```text
+events/claimed.jsonl
+events/printed.jsonl
+events/failed.jsonl
+receipts/YYYY/MM/DD/*.txt
+images/YYYY/MM/DD/*.svg
+exports/receipt-cafe-log.csv
+```
+
+The CSV and SVG receipt previews can be mirrored to the Obsidian/iCloud project folder from the MacBook Air:
+
+```bash
+npm run sync:archive
+```
+
+Default local mirror:
+
+```text
+/Users/davidsutrin/Library/Mobile Documents/iCloud~md~obsidian/Documents/hub/projects/homelab/printer/receipt-cafe/archive
+```
+
+If iCloud Drive is later enabled on the old MBP, set `RECEIPT_DROP_MIRROR_DIR` in the MBP poller env to mirror the CSV and SVG previews automatically after each print. Printing does not depend on the mirror path.
