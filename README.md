@@ -199,6 +199,8 @@ The CSV and SVG receipt previews can be mirrored to the Obsidian/iCloud project 
 npm run sync:archive
 ```
 
+On the MacBook Air, a LaunchAgent runs `scripts/daily-archive-sync-if-needed.sh` every 30 minutes. The wrapper syncs at most once per day, after 9:10 AM, so it catches up later if the Air is asleep or offline at the target time.
+
 Default local mirror:
 
 ```text
