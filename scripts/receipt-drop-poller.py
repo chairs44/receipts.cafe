@@ -2,13 +2,11 @@
 import json
 import os
 import csv
-import html
 import shutil
 import subprocess
 import tempfile
 import time
 from pathlib import Path
-from textwrap import wrap as text_wrap
 from urllib.request import Request, urlopen
 from urllib.error import URLError
 
@@ -40,15 +38,16 @@ CSV_FIELDS = [
     "receipt_text_path",
     "receipt_image_path",
 ]
-RECEIPT_COLS = 42
-RECEIPT_CONTENT_COLS = 32
-RECEIPT_MARGIN_COLS = (RECEIPT_COLS - RECEIPT_CONTENT_COLS) // 2
-RECEIPT_TITLE = "RECEIPTS.CAFE"
-RECEIPT_SITE = "www.receipts.cafe"
-
-
-def center(text, width=RECEIPT_COLS):
-    return "\n".join(line.center(width) for line in text.splitlines())
+RECEIPT_PIXEL_WIDTH = 512
+RECEIPT_SIDE_MARGIN = 34
+RECEIPT_TOP_MARGIN = 24
+RECEIPT_BOTTOM_MARGIN = 24
+RECEIPT_TITLE = "WWW.RECEIPTS.CAFE"
+RECEIPT_SEPARATOR = "-" * 24
+RECEIPT_CONTENT_COLS = len(RECEIPT_SEPARATOR)
+RECEIPT_FONT = "/System/Library/Fonts/Monaco.ttf"
+TITLE_TRACKING = 3
+MESSAGE_CENTER_NUDGE_Y = -4
 
 
 def receipt_timestamp(item):
@@ -56,41 +55,158 @@ def receipt_timestamp(item):
     return created[:16].replace("T", " ")
 
 
-def wrap_message(text, width=RECEIPT_CONTENT_COLS):
-    return text_wrap(
-        " ".join(str(text).split()),
-        width=width,
-        break_long_words=True,
-        break_on_hyphens=False,
-    ) or [""]
+def load_font(size):
+    from PIL import ImageFont
+    try:
+        return ImageFont.truetype(RECEIPT_FONT, size)
+    except Exception:
+        return ImageFont.truetype("/System/Library/Fonts/Menlo.ttc", size)
 
 
-def receipt_lines(item):
-    margin = " " * RECEIPT_MARGIN_COLS
-    separator = "-" * RECEIPT_CONTENT_COLS
-    lines = [
-        center(RECEIPT_TITLE),
-        "",
-        center(separator),
-        *[f"{margin}{line}" for line in wrap_message(item["message"])],
-        center(separator),
-        center(receipt_timestamp(item)),
-        center(RECEIPT_SITE),
-    ]
-    return lines
+def glyph_width(draw, text, font):
+    bbox = draw.textbbox((0, 0), text, font=font)
+    return bbox[2] - bbox[0]
+
+
+def text_width(draw, text, font, tracking=0):
+    if not text:
+        return 0
+    return sum(glyph_width(draw, ch, font) for ch in text) + tracking * (len(text) - 1)
+
+
+def draw_text(draw, x, y, text, font, tracking=0, darken=True):
+    cursor = x
+    for ch in text:
+        draw.text((cursor, y), ch, font=font, fill=0)
+        if darken:
+            draw.text((cursor + 1, y), ch, font=font, fill=0)
+        cursor += glyph_width(draw, ch, font) + tracking
+
+
+def draw_center(draw, y, text, font, tracking=0):
+    x = (RECEIPT_PIXEL_WIDTH - text_width(draw, text, font, tracking)) // 2
+    draw_text(draw, x, y, text, font, tracking=tracking)
+
+
+def wrap_message_pixels(draw, text, font, max_width):
+    words = " ".join(str(text).split()).split(" ")
+    lines = []
+    current = ""
+    for word in words:
+        candidate = word if not current else f"{current} {word}"
+        if text_width(draw, candidate, font) <= max_width:
+            current = candidate
+            continue
+        if current:
+            lines.append(current)
+            current = ""
+        piece = ""
+        for ch in word:
+            test = piece + ch
+            if text_width(draw, test, font) <= max_width:
+                piece = test
+            else:
+                if piece:
+                    lines.append(piece)
+                piece = ch
+        current = piece
+    if current:
+        lines.append(current)
+    return lines or [""]
+
+
+def receipt_layout(item):
+    from PIL import Image, ImageDraw
+
+    title_font = load_font(30)
+    body_font = load_font(30)
+    meta_font = load_font(30)
+    scratch = Image.new("L", (RECEIPT_PIXEL_WIDTH, 100), 255)
+    draw = ImageDraw.Draw(scratch)
+    message_lines = wrap_message_pixels(
+        draw,
+        item.get("message", ""),
+        body_font,
+        RECEIPT_PIXEL_WIDTH - RECEIPT_SIDE_MARGIN * 2,
+    )
+    return title_font, body_font, meta_font, message_lines
+
+
+def render_receipt_image(item):
+    from PIL import Image, ImageDraw
+
+    title_font, body_font, meta_font, message_lines = receipt_layout(item)
+    img = Image.new("L", (RECEIPT_PIXEL_WIDTH, 2000), 255)
+    draw = ImageDraw.Draw(img)
+
+    y = RECEIPT_TOP_MARGIN
+    draw_center(draw, y, RECEIPT_TITLE, title_font, tracking=TITLE_TRACKING)
+    top_separator_y = y + 68
+    draw_center(draw, top_separator_y, RECEIPT_SEPARATOR, meta_font)
+
+    line_step = 38
+    visual_gap = 41
+    separator_bbox = draw.textbbox((0, top_separator_y), RECEIPT_SEPARATOR, font=meta_font)
+    message_bbox = draw.textbbox((0, 0), message_lines[0], font=body_font)
+    message_top_offset = message_bbox[1]
+    message_bottom_offset = message_bbox[3]
+    message_ink_height = (len(message_lines) - 1) * line_step + (message_bottom_offset - message_top_offset)
+    message_y = separator_bbox[3] + visual_gap - message_top_offset + MESSAGE_CENTER_NUDGE_Y
+
+    y = message_y
+    for line in message_lines:
+        draw_text(draw, RECEIPT_SIDE_MARGIN, y, line, body_font)
+        y += line_step
+
+    bottom_separator_top = separator_bbox[3] + visual_gap + message_ink_height + visual_gap
+    bottom_separator_y = bottom_separator_top - separator_bbox[1] + top_separator_y
+    draw_center(draw, bottom_separator_y, RECEIPT_SEPARATOR, meta_font)
+    y = bottom_separator_y + 70
+    draw_center(draw, y, receipt_timestamp(item), meta_font)
+    y += 38 + RECEIPT_BOTTOM_MARGIN
+
+    cropped = img.crop((0, 0, RECEIPT_PIXEL_WIDTH, y))
+    return cropped.point(lambda p: 0 if p < 210 else 255, "1")
 
 
 def render(item):
-    return "\n".join(receipt_lines(item)) + "\n"
+    title_font, body_font, meta_font, message_lines = receipt_layout(item)
+    lines = [RECEIPT_TITLE, RECEIPT_SEPARATOR, *message_lines, RECEIPT_SEPARATOR, receipt_timestamp(item)]
+    return "\n".join(lines) + "\n"
+
+
+def raster_bytes(img):
+    from PIL import Image
+
+    img = img.convert("1")
+    width, height = img.size
+    if width % 8:
+        padded = Image.new("1", (width + (8 - width % 8), height), 1)
+        padded.paste(img, (0, 0))
+        img = padded
+        width, height = img.size
+    width_bytes = width // 8
+    data = bytearray()
+    pixels = img.load()
+    for y in range(height):
+        for xb in range(width_bytes):
+            byte = 0
+            for bit in range(8):
+                x = xb * 8 + bit
+                if pixels[x, y] == 0:
+                    byte |= 0x80 >> bit
+            data.append(byte)
+    return width_bytes, height, bytes(data)
 
 
 def render_escpos(item):
+    img = render_receipt_image(item)
+    width_bytes, height, data = raster_bytes(img)
     raw = bytearray()
-    raw += b"\x1b@"          # initialize
-    raw += b"\x1b!\x00"      # normal text
-    raw += render(item).encode("ascii", errors="replace")
-    raw += b"\x1bd\x08"      # feed 8 lines so short receipts clear the cutter
-    raw += b"\x1d\x56\x01"   # GS V 1: partial cut
+    raw += b"\x1b@"  # initialize
+    raw += b"\x1dv0\x00" + bytes([width_bytes % 256, width_bytes // 256, height % 256, height // 256]) + data
+    raw += b"\x1bd\x08"  # feed 8 lines so short receipts clear the cutter
+    raw += b"\x1dV\x01"  # partial cut
     return bytes(raw)
 
 
@@ -128,92 +244,17 @@ def write_receipt_text(item, text, printed_at):
     return rel
 
 
-def archive_svg_from_lines(lines):
-    width = 384
-    line_height = 22
-    top = 22
-    height = max(180, top + line_height * len(lines) + 34)
-    body = []
-    for index, line in enumerate(lines):
-        y = top + index * line_height
-        anchor = "middle"
-        x = "192"
-        if index in message_line_indexes(lines):
-            anchor = "start"
-            x = "31"
-        body.append(
-            f'<text x="{x}" y="{y}" text-anchor="{anchor}">{html.escape(line.strip() if anchor == "middle" else line[RECEIPT_MARGIN_COLS:])}</text>'
-        )
-    return "\n".join([
-        '<svg xmlns="http://www.w3.org/2000/svg" width="384" height="%s" viewBox="0 0 384 %s">' % (height, height),
-        '<rect width="384" height="%s" fill="#fbfaf4"/>' % height,
-        '<g font-family="Menlo, Consolas, monospace" font-size="18" fill="#111">',
-        *body,
-        "</g>",
-        "</svg>",
-        "",
-    ])
-
-
-def message_line_indexes(lines):
-    indexes = set()
-    separators = [i for i, line in enumerate(lines) if line.strip() == "-" * RECEIPT_CONTENT_COLS]
-    if len(separators) < 2:
-        return indexes
-    for index in range(separators[0] + 1, separators[1]):
-        if lines[index].strip():
-            indexes.add(index)
-    return indexes
-
-
 def write_receipt_png(item, text, printed_at):
     try:
-        from PIL import Image, ImageDraw, ImageFont
+        img = render_receipt_image(item).convert("RGB")
     except Exception as exc:
         print(f"archive png unavailable: {exc}", flush=True)
         return None
-
-    lines = text.rstrip("\n").splitlines()
-    width = 384
-    line_height = 22
-    top = 18
-    bottom = 30
-    height = max(180, top + line_height * len(lines) + bottom)
-    img = Image.new("RGB", (width, height), (251, 250, 244))
-    draw = ImageDraw.Draw(img)
-    try:
-        font = ImageFont.truetype("/System/Library/Fonts/Menlo.ttc", 18, index=0)
-        title_font = ImageFont.truetype("/System/Library/Fonts/Menlo.ttc", 20, index=1)
-    except Exception:
-        font = ImageFont.load_default()
-        title_font = font
-
-    message_indexes = message_line_indexes(lines)
-    for index, line in enumerate(lines):
-        y = top + index * line_height
-        if index in message_indexes:
-            draw.text((31, y), line[RECEIPT_MARGIN_COLS:], font=font, fill=(17, 17, 17))
-            continue
-        display = line.strip()
-        use_font = title_font if display == RECEIPT_TITLE else font
-        bbox = draw.textbbox((0, 0), display, font=use_font)
-        draw.text(((width - (bbox[2] - bbox[0])) / 2, y), display, font=use_font, fill=(17, 17, 17))
 
     rel = archive_rel_dir("images", printed_at) / f"{archive_slug(item, printed_at)}.png"
     path = ARCHIVE_DIR / rel
     path.parent.mkdir(parents=True, exist_ok=True)
     img.save(path)
-    mirror_archive_file(rel)
-    return rel
-
-
-def write_receipt_svg(item, text, printed_at):
-    lines = text.rstrip("\n").splitlines()
-    svg = archive_svg_from_lines(lines)
-    rel = archive_rel_dir("images", printed_at) / f"{archive_slug(item, printed_at)}.svg"
-    path = ARCHIVE_DIR / rel
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(svg, encoding="utf-8")
     mirror_archive_file(rel)
     return rel
 
@@ -256,7 +297,6 @@ def archive_printed(item, text):
     printed_at = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
     text_rel = write_receipt_text(item, text, printed_at)
     image_rel = write_receipt_png(item, text, printed_at)
-    write_receipt_svg(item, text, printed_at)
     record = {
         "id": item.get("id", ""),
         "status": "printed",

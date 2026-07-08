@@ -39,28 +39,31 @@ The MacBook Air is not required for normal printing.
 
 ## Print And Archive Template
 
-Public messages use one shared receipt template in the old MBP poller. That
-same render path feeds:
+Public messages use one shared raster receipt renderer in the old MBP poller.
+That same render path feeds:
 
 - raw ESC/POS bytes sent to the Epson printer
 - archived `.txt` receipt text
 - archived `.png` visual preview
-- archived `.svg` fallback preview
 
 Current template:
 
 ```text
-              RECEIPTS.CAFE
-
-     --------------------------------
-     Message text wraps left-aligned.
-     --------------------------------
-             2026-07-08 15:46
-            www.receipts.cafe
+          WWW.RECEIPTS.CAFE
+        ------------------------
+        Message text wraps left-
+        aligned in the body.
+        ------------------------
+          2026-07-08 16:36
 ```
 
 Vercel still only receives and queues plain text. The home network is not
 exposed, and public visitors do not see a receipt preview.
+
+The old MBP renders the receipt as a 512px-wide 1-bit image, sends that image
+to the printer as raw ESC/POS raster data, and saves the same image as the
+archive PNG. Existing SVG files in the archive are legacy previews only; new
+archive entries should use PNG as the visual source of truth.
 
 ## Safety Defaults
 
@@ -198,7 +201,6 @@ events/printed.jsonl
 events/failed.jsonl
 receipts/YYYY/MM/DD/*.txt
 images/YYYY/MM/DD/*.png
-images/YYYY/MM/DD/*.svg
 exports/receipt-cafe-log.csv
 ```
 
