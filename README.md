@@ -37,22 +37,30 @@ The MacBook Air is not required for normal printing.
 - If the printer is unplugged, powered off, or not visible over USB, the poller sends an offline heartbeat and leaves messages in Redis.
 - `/api/status` reads the heartbeat and powers the public "Printer Online/Offline" indicator.
 
-## Paused Future Plan: Square Rendered Messages
+## Print And Archive Template
 
-Future public-message printouts are planned to become rendered square images. This is not active production behavior yet.
+Public messages use one shared receipt template in the old MBP poller. That
+same render path feeds:
 
-Planned constraints:
+- raw ESC/POS bytes sent to the Epson printer
+- archived `.txt` receipt text
+- archived `.png` visual preview
+- archived `.svg` fallback preview
 
-- applies only to public messages from the canonical public site, `https://receipts.cafe`
-- target size is `72mm x 72mm`
-- rendering happens locally in the old MBP poller
-- Vercel should continue queueing plain text
-- all allowed `300` character messages must fit
-- design should be message-first
-- timestamp info stays, with final styling TBD
-- public website does not show a receipt preview for now
+Current template:
 
-Wait for reference images and final template direction before implementing this.
+```text
+              RECEIPTS.CAFE
+
+     --------------------------------
+     Message text wraps left-aligned.
+     --------------------------------
+             2026-07-08 15:46
+            www.receipts.cafe
+```
+
+Vercel still only receives and queues plain text. The home network is not
+exposed, and public visitors do not see a receipt preview.
 
 ## Safety Defaults
 
@@ -146,7 +154,7 @@ The always-on poller now runs on the old MBP:
 It prints locally via:
 
 ```text
-lp -d EPSON_TM_T88V
+lp -o raw -d EPSON_TM_T88V
 ```
 
 Check status from the MacBook Air:
@@ -189,11 +197,12 @@ events/claimed.jsonl
 events/printed.jsonl
 events/failed.jsonl
 receipts/YYYY/MM/DD/*.txt
+images/YYYY/MM/DD/*.png
 images/YYYY/MM/DD/*.svg
 exports/receipt-cafe-log.csv
 ```
 
-The CSV and SVG receipt previews can be mirrored to the Obsidian/iCloud project folder from the MacBook Air:
+The CSV and receipt previews can be mirrored to the Obsidian/iCloud project folder from the MacBook Air:
 
 ```bash
 npm run sync:archive
@@ -207,4 +216,4 @@ Default local mirror:
 /Users/davidsutrin/Library/Mobile Documents/iCloud~md~obsidian/Documents/hub/projects/homelab/printer/receipt-cafe/archive
 ```
 
-If iCloud Drive is later enabled on the old MBP, set `RECEIPT_DROP_MIRROR_DIR` in the MBP poller env to mirror the CSV and SVG previews automatically after each print. Printing does not depend on the mirror path.
+If iCloud Drive is later enabled on the old MBP, set `RECEIPT_DROP_MIRROR_DIR` in the MBP poller env to mirror the CSV and visual previews automatically after each print. Printing does not depend on the mirror path.
