@@ -33,6 +33,8 @@ The MacBook Air is not required for normal printing.
 - Valid messages are pushed into the Redis list `receipt-drop:queue`.
 - The old MBP LaunchAgent polls `/api/poll` with `POLL_TOKEN`.
 - `/api/poll` uses Redis `lmove` to claim a message into `receipt-drop:inflight`; the poller calls `/api/ack` only after `lp` succeeds.
+- Every claimed message gets `claimedAt`, `claimId`, and an incremented `attempts` count.
+- Before each new claim, `/api/poll` recovers stale inflight messages older than `INFLIGHT_STALE_SECONDS` and requeues them.
 - To avoid losing messages, the MBP poller checks the local CUPS queue and USB printer presence before polling.
 - If the printer is unplugged, powered off, or not visible over USB, the poller sends an offline heartbeat and leaves messages in Redis.
 - `/api/status` reads the heartbeat and powers the public "Printer Online/Offline" indicator.
@@ -87,9 +89,11 @@ RATE_LIMIT_MAX=3
 RATE_LIMIT_WINDOW_SECONDS=3600
 DAILY_LIMIT=30
 MESSAGE_MAX_CHARS=300
+INFLIGHT_STALE_SECONDS=600
 ```
 
 Use a long random value for `POLL_TOKEN`.
+If `INFLIGHT_STALE_SECONDS` is omitted, `/api/poll` defaults to `600`.
 
 ## Local Development
 
@@ -167,6 +171,7 @@ ssh ds-mbp 'launchctl print gui/$(id -u)/com.davidsutrin.receipt-drop-poller'
 ssh ds-mbp 'lpstat -p EPSON_TM_T88V -a EPSON_TM_T88V -d'
 ssh ds-mbp 'tail -40 ~/Library/Logs/receipt-drop/poller.out.log'
 curl -s https://receipts.cafe/api/status
+curl -H "Authorization: Bearer $POLL_TOKEN" https://receipts.cafe/api/admin
 ```
 
 The poller config lives at:
@@ -203,6 +208,8 @@ receipts/YYYY/MM/DD/*.txt
 images/YYYY/MM/DD/*.png
 exports/receipt-cafe-log.csv
 ```
+
+Redis also keeps a short recovered-job log at `receipt-drop:recovered`. This is operational state rather than a permanent archive.
 
 The CSV and receipt previews can be mirrored to the Obsidian/iCloud project folder from the MacBook Air:
 

@@ -456,6 +456,9 @@ def main():
                 continue
 
             data = poll()
+            recovered = int(data.get("recovered") or 0)
+            if recovered:
+                print(f"recovered {recovered} stale inflight message(s)", flush=True)
             item = data.get("item")
             if item:
                 print_and_ack(item, data.get("rawItem"))
