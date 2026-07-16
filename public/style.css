@@ -288,6 +288,7 @@ button:disabled {
   width: min(230px, 72%);
   height: auto;
   object-fit: contain;
+  filter: invert(1);
 }
 
 .about-copy {
