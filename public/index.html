@@ -37,8 +37,23 @@
       </section>
     </main>
     <footer class="site-footer">
+      <button id="about-open" class="footer-button" type="button">about</button>
       <a href="https://www.davidsutrin.xyz/" rel="me">www.davidsutrin.xyz</a>
     </footer>
+
+    <div id="about-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="about-title" hidden>
+      <button id="about-close" class="modal-backdrop" type="button" aria-label="Close about dialog"></button>
+      <section class="modal-card">
+        <button id="about-x" class="modal-close" type="button" aria-label="Close about dialog">close</button>
+        <h2 id="about-title">RECEIPTS.CAFE</h2>
+        <p>
+          RECEIPTS.CAFE allows users to submit anonymous messages that are physically
+          printed in real time as thermal receipts and digitally archived for anyone to view.
+        </p>
+        <p>Scanned archive coming soon...</p>
+      </section>
+    </div>
+
     <script>
       window.va = window.va || function () {
         (window.vaq = window.vaq || []).push(arguments);

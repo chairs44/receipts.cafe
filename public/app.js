@@ -6,8 +6,13 @@ const send = document.querySelector("#send");
 const status = document.querySelector("#status");
 const printerState = document.querySelector("#printer-state");
 const printerStateLabel = document.querySelector("#printer-state-label");
+const aboutOpen = document.querySelector("#about-open");
+const aboutModal = document.querySelector("#about-modal");
+const aboutClose = document.querySelector("#about-close");
+const aboutX = document.querySelector("#about-x");
 const maxChars = 300;
 let printerOnline = false;
+let lastFocusedElement = null;
 
 function setStatus(text, kind = "info") {
   status.textContent = text;
@@ -36,6 +41,25 @@ async function refreshPrinterState() {
 }
 
 message.addEventListener("input", updateCount);
+
+function openAbout() {
+  lastFocusedElement = document.activeElement;
+  aboutModal.hidden = false;
+  aboutX.focus();
+}
+
+function closeAbout() {
+  aboutModal.hidden = true;
+  if (lastFocusedElement) lastFocusedElement.focus();
+}
+
+aboutOpen.addEventListener("click", openAbout);
+aboutClose.addEventListener("click", closeAbout);
+aboutX.addEventListener("click", closeAbout);
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && !aboutModal.hidden) closeAbout();
+});
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
