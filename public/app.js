@@ -44,12 +44,14 @@ message.addEventListener("input", updateCount);
 
 function openAbout() {
   lastFocusedElement = document.activeElement;
+  document.body.classList.add("modal-open");
   aboutModal.hidden = false;
   aboutX.focus();
 }
 
 function closeAbout() {
   aboutModal.hidden = true;
+  document.body.classList.remove("modal-open");
   if (lastFocusedElement) lastFocusedElement.focus();
 }
 
