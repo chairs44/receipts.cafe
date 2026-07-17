@@ -292,7 +292,7 @@ button:disabled {
   justify-content: center;
   min-height: 102px;
   color: var(--text);
-  font-family: "Geist Pixel Circle", "Geist Pixel", system-ui, sans-serif;
+  font-family: "Geist Pixel Circle", system-ui, sans-serif;
   font-size: 44px;
   line-height: 54px;
   text-align: center;
