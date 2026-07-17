@@ -349,12 +349,8 @@ button:disabled {
   margin: 0;
   color: var(--text);
   font-family: Georgia, "Times New Roman", serif;
-  font-size: 20px;
-  line-height: 31px;
-}
-
-.about-copy .about-emphasis {
-  font-size: 22px;
+  font-size: 19px;
+  line-height: 30px;
 }
 
 .about-copy a {
@@ -469,7 +465,7 @@ body.modal-open {
   }
 
   .about-copy p {
-    font-size: 18px;
-    line-height: 28px;
+    font-size: 17px;
+    line-height: 27px;
   }
 }
