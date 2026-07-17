@@ -181,11 +181,48 @@ button:disabled {
   color: var(--danger);
 }
 
+.site-nav {
+  position: fixed;
+  top: max(18px, env(safe-area-inset-top));
+  right: 18px;
+  z-index: 10;
+  display: flex;
+  align-items: baseline;
+  gap: 18px;
+}
+
+.archive-link {
+  position: relative;
+}
+
+.archive-hint {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  padding: 5px 7px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1;
+  text-transform: uppercase;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateY(-3px);
+  pointer-events: none;
+}
+
+.archive-link:hover .archive-hint,
+.archive-link:focus-visible .archive-hint {
+  opacity: 1;
+  transform: translateY(0);
+}
+
 .site-footer {
   position: fixed;
-  right: 24px;
+  right: 0;
   bottom: max(22px, env(safe-area-inset-bottom));
-  left: 24px;
+  left: 0;
   z-index: 5;
   display: flex;
   align-items: center;
@@ -195,7 +232,7 @@ button:disabled {
 }
 
 .site-footer a,
-.footer-button {
+.nav-link {
   min-height: 0;
   border: 0;
   background: transparent;
@@ -210,8 +247,8 @@ button:disabled {
 
 .site-footer a:hover,
 .site-footer a:focus-visible,
-.footer-button:hover,
-.footer-button:focus-visible {
+.nav-link:hover,
+.nav-link:focus-visible {
   color: var(--text);
   outline: none;
 }
@@ -293,7 +330,7 @@ button:disabled {
   min-height: 102px;
   color: var(--text);
   font-family: "Geist Pixel Grid", system-ui, sans-serif;
-  margin-bottom: 12px;
+  margin-bottom: 24px;
   font-size: 44px;
   line-height: 54px;
   text-align: center;
@@ -324,15 +361,6 @@ button:disabled {
 .about-copy a:hover,
 .about-copy a:focus-visible {
   color: var(--muted);
-}
-
-.about-copy .archive-note {
-  padding-top: 12px;
-  color: var(--muted);
-  font-family: inherit;
-  font-size: 13px;
-  line-height: 1.4;
-  text-transform: uppercase;
 }
 
 .sr-only {
@@ -377,9 +405,13 @@ body.modal-open {
     animation: modal-scale 160ms ease-out;
   }
 
-  .footer-button,
+  .nav-link,
   .modal-close {
     transition: color 120ms ease-out;
+  }
+
+  .archive-hint {
+    transition: opacity 140ms ease-out, transform 140ms ease-out;
   }
 }
 
@@ -405,12 +437,13 @@ body.modal-open {
     font-size: 11px;
   }
 
-  .site-footer {
-    gap: 14px;
+  .site-nav {
+    right: 18px;
+    gap: 12px;
   }
 
   .site-footer a,
-  .footer-button {
+  .nav-link {
     font-size: 12px;
   }
 
