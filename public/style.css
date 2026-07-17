@@ -10,6 +10,14 @@
   --online: #2fd365;
 }
 
+@font-face {
+  font-family: "Geist Pixel Circle";
+  src: url("/fonts/GeistPixel-Circle.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -239,16 +247,16 @@ button:disabled {
   display: flex;
   flex-direction: column;
   border: 1px solid var(--line);
-  background: var(--bg);
-  box-shadow: 0 18px 80px rgba(0, 0, 0, 0.55);
+  background: #070707;
+  box-shadow: 0 24px 90px rgba(0, 0, 0, 0.62);
 }
 
 .modal-topbar {
-  flex: 0 0 58px;
+  flex: 0 0 52px;
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  padding: 0 20px;
+  padding: 0 24px;
   border-bottom: 1px solid #191916;
 }
 
@@ -259,7 +267,7 @@ button:disabled {
   overscroll-behavior: contain;
   scrollbar-color: var(--line) transparent;
   scrollbar-width: thin;
-  padding: 42px 74px 60px;
+  padding: 13px 120px 64px;
 }
 
 .modal-scroll::-webkit-scrollbar {
@@ -277,25 +285,24 @@ button:disabled {
   background-clip: content-box;
 }
 
-.about-logo-wrap {
+.about-wordmark {
+  margin: 0;
   display: flex;
+  align-items: center;
   justify-content: center;
-  padding-bottom: 38px;
-}
-
-.about-logo {
-  display: block;
-  width: min(230px, 72%);
-  height: auto;
-  object-fit: contain;
-  filter: invert(1);
+  min-height: 102px;
+  color: var(--text);
+  font-family: "Geist Pixel Circle", "Geist Pixel", system-ui, sans-serif;
+  font-size: 44px;
+  line-height: 54px;
+  text-align: center;
+  text-wrap: balance;
 }
 
 .about-copy {
-  width: min(610px, 100%);
-  margin-inline: auto;
+  width: 100%;
   display: grid;
-  gap: 25px;
+  gap: 22px;
 }
 
 .about-copy p {
@@ -412,15 +419,13 @@ body.modal-open {
   }
 
   .modal-scroll {
-    padding: 32px 24px 46px;
+    padding: 13px 24px 46px;
   }
 
-  .about-logo-wrap {
-    padding-bottom: 30px;
-  }
-
-  .about-logo {
-    width: min(190px, 76%);
+  .about-wordmark {
+    min-height: 92px;
+    font-size: 34px;
+    line-height: 42px;
   }
 
   .about-copy p {

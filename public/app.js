@@ -46,6 +46,7 @@ function openAbout() {
   lastFocusedElement = document.activeElement;
   document.body.classList.add("modal-open");
   aboutModal.hidden = false;
+  aboutModal.querySelector(".modal-scroll").scrollTop = 0;
   aboutX.focus();
 }
 
