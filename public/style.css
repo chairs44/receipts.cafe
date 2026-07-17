@@ -198,7 +198,7 @@ button:disabled {
 .archive-hint {
   position: absolute;
   top: calc(100% + 8px);
-  right: 0;
+  left: 50%;
   padding: 5px 7px;
   border: 1px solid var(--line);
   background: var(--panel);
@@ -208,14 +208,14 @@ button:disabled {
   text-transform: uppercase;
   white-space: nowrap;
   opacity: 0;
-  transform: translateY(-3px);
+  transform: translate(-50%, -3px);
   pointer-events: none;
 }
 
 .archive-link:hover .archive-hint,
 .archive-link:focus-visible .archive-hint {
   opacity: 1;
-  transform: translateY(0);
+  transform: translate(-50%, 0);
 }
 
 .site-footer {
@@ -330,9 +330,11 @@ button:disabled {
   min-height: 102px;
   color: var(--text);
   font-family: "Geist Pixel Grid", system-ui, sans-serif;
+  font-weight: 400;
   margin-bottom: 24px;
-  font-size: 44px;
-  line-height: 54px;
+  font-size: 50px;
+  line-height: 60px;
+  opacity: 0.92;
   text-align: center;
   text-wrap: balance;
 }
@@ -349,6 +351,10 @@ button:disabled {
   font-family: Georgia, "Times New Roman", serif;
   font-size: 20px;
   line-height: 31px;
+}
+
+.about-copy .about-emphasis {
+  font-size: 22px;
 }
 
 .about-copy a {
@@ -458,8 +464,8 @@ body.modal-open {
 
   .about-wordmark {
     min-height: 92px;
-    font-size: 34px;
-    line-height: 42px;
+    font-size: 38px;
+    line-height: 46px;
   }
 
   .about-copy p {
