@@ -11,8 +11,8 @@
 }
 
 @font-face {
-  font-family: "Geist Pixel Circle";
-  src: url("/fonts/GeistPixel-Circle.woff2") format("woff2");
+  font-family: "Geist Pixel Grid";
+  src: url("/fonts/GeistPixel-Grid.woff2") format("woff2");
   font-style: normal;
   font-weight: 400;
   font-display: swap;
@@ -292,7 +292,8 @@ button:disabled {
   justify-content: center;
   min-height: 102px;
   color: var(--text);
-  font-family: "Geist Pixel Circle", system-ui, sans-serif;
+  font-family: "Geist Pixel Grid", system-ui, sans-serif;
+  margin-bottom: 12px;
   font-size: 44px;
   line-height: 54px;
   text-align: center;
