@@ -42,7 +42,7 @@ input {
   font: inherit;
 }
 
- .shell {
+.shell {
   min-height: 100svh;
   background: var(--page);
   display: grid;
