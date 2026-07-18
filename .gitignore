@@ -1,10 +1,11 @@
 .DS_Store
-.env*.local
+.env*
 .next/
 node_modules/
 __pycache__/
 *.pyc
 receipt-drop-poller.local.json
-
-.vercel
-.env*
+.vercel/
+*.log
+archive/
+archive-mirror/
