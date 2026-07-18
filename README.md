@@ -1,4 +1,4 @@
-# receipt.cafe
+# receipts.cafe
 
 receipts.cafe allows users to submit anonymous messages that are physically
 printed in real time as thermal receipts and digitally archived for anyone to
