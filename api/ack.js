@@ -3,6 +3,7 @@ import { Redis } from "@upstash/redis";
 const INFLIGHT_KEY = "receipt-drop:inflight";
 const PRINTED_LOG_KEY = "receipt-drop:printed";
 const LAST_PRINTED_KEY = "receipt-drop:last-printed";
+const PRINTED_LOG_RETENTION = 10_000;
 
 let redis;
 
@@ -57,7 +58,7 @@ export default async function handler(req, res) {
     const removed = await redisClient.lrem(INFLIGHT_KEY, 1, serialized);
 
     await redisClient.lpush(PRINTED_LOG_KEY, JSON.stringify({ ...item, printedAt }));
-    await redisClient.ltrim(PRINTED_LOG_KEY, 0, 199);
+    await redisClient.ltrim(PRINTED_LOG_KEY, 0, PRINTED_LOG_RETENTION - 1);
     await redisClient.set(LAST_PRINTED_KEY, printedAt, { ex: 7 * 24 * 60 * 60 });
 
     return res.status(200).json({ ok: true, removed });

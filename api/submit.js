@@ -3,6 +3,7 @@ import { Redis } from "@upstash/redis";
 
 const QUEUE_KEY = "receipt-drop:queue";
 const LOG_KEY = "receipt-drop:log";
+const LOG_RETENTION = 10_000;
 
 let redis;
 
@@ -111,7 +112,7 @@ export default async function handler(req, res) {
 
     await redisClient.rpush(QUEUE_KEY, JSON.stringify(item));
     await redisClient.lpush(LOG_KEY, JSON.stringify(item));
-    await redisClient.ltrim(LOG_KEY, 0, 199);
+    await redisClient.ltrim(LOG_KEY, 0, LOG_RETENTION - 1);
 
     return res.status(200).json({ ok: true });
   } catch (error) {

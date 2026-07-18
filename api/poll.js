@@ -6,6 +6,7 @@ const INFLIGHT_KEY = "receipt-drop:inflight";
 const RECOVERED_LOG_KEY = "receipt-drop:recovered";
 const DEFAULT_INFLIGHT_STALE_SECONDS = 10 * 60;
 const MAX_RECOVER_PER_POLL = 5;
+const RECOVERED_LOG_RETENTION = 10_000;
 
 let redis;
 
@@ -112,7 +113,7 @@ async function recoverStaleInflight(redisClient) {
   }
 
   if (recovered) {
-    await redisClient.ltrim(RECOVERED_LOG_KEY, 0, 199);
+    await redisClient.ltrim(RECOVERED_LOG_KEY, 0, RECOVERED_LOG_RETENTION - 1);
   }
 
   return recovered;
