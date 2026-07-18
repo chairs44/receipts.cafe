@@ -10,6 +10,10 @@ const aboutOpen = document.querySelector("#about-open");
 const aboutModal = document.querySelector("#about-modal");
 const aboutClose = document.querySelector("#about-close");
 const aboutX = document.querySelector("#about-x");
+const archiveOpen = document.querySelector("#archive-open");
+const archiveModal = document.querySelector("#archive-modal");
+const archiveClose = document.querySelector("#archive-close");
+const archiveX = document.querySelector("#archive-x");
 const maxChars = 300;
 let printerOnline = false;
 let lastFocusedElement = null;
@@ -42,26 +46,31 @@ async function refreshPrinterState() {
 
 message.addEventListener("input", updateCount);
 
-function openAbout() {
+function openModal(modal, closeButton) {
   lastFocusedElement = document.activeElement;
   document.body.classList.add("modal-open");
-  aboutModal.hidden = false;
-  aboutModal.querySelector(".modal-scroll").scrollTop = 0;
-  aboutX.focus();
+  modal.hidden = false;
+  modal.querySelector(".modal-scroll").scrollTop = 0;
+  closeButton.focus();
 }
 
-function closeAbout() {
-  aboutModal.hidden = true;
+function closeModal(modal) {
+  modal.hidden = true;
   document.body.classList.remove("modal-open");
   if (lastFocusedElement) lastFocusedElement.focus();
 }
 
-aboutOpen.addEventListener("click", openAbout);
-aboutClose.addEventListener("click", closeAbout);
-aboutX.addEventListener("click", closeAbout);
+aboutOpen.addEventListener("click", () => openModal(aboutModal, aboutX));
+aboutClose.addEventListener("click", () => closeModal(aboutModal));
+aboutX.addEventListener("click", () => closeModal(aboutModal));
+archiveOpen.addEventListener("click", () => openModal(archiveModal, archiveX));
+archiveClose.addEventListener("click", () => closeModal(archiveModal));
+archiveX.addEventListener("click", () => closeModal(archiveModal));
 
 document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape" && !aboutModal.hidden) closeAbout();
+  if (event.key !== "Escape") return;
+  if (!aboutModal.hidden) closeModal(aboutModal);
+  if (!archiveModal.hidden) closeModal(archiveModal);
 });
 
 form.addEventListener("submit", async (event) => {

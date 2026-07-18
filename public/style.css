@@ -194,47 +194,6 @@ button:disabled {
   gap: 18px;
 }
 
-.archive-link {
-  position: relative;
-}
-
-.archive-hint {
-  position: absolute;
-  top: calc(100% + 8px);
-  left: 50%;
-  padding: 5px 7px;
-  border: 1px solid var(--line);
-  background: var(--panel);
-  color: var(--muted);
-  font-size: 10px;
-  line-height: 1;
-  text-transform: uppercase;
-  white-space: nowrap;
-  opacity: 0;
-  transform: translate(-50%, -3px);
-  pointer-events: none;
-}
-
-.archive-link:hover .archive-hint,
-.archive-link:focus-visible .archive-hint {
-  opacity: 1;
-  transform: translate(-50%, 0);
-}
-
-.site-footer {
-  position: fixed;
-  right: 0;
-  bottom: max(22px, env(safe-area-inset-bottom));
-  left: 0;
-  z-index: 5;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 18px;
-  pointer-events: none;
-}
-
-.site-footer a,
 .nav-link {
   min-height: 0;
   border: 0;
@@ -248,8 +207,6 @@ button:disabled {
   cursor: pointer;
 }
 
-.site-footer a:hover,
-.site-footer a:focus-visible,
 .nav-link:hover,
 .nav-link:focus-visible {
   color: var(--text);
@@ -415,9 +372,6 @@ body.modal-open {
     transition: color 120ms ease-out;
   }
 
-  .archive-hint {
-    transition: opacity 140ms ease-out, transform 140ms ease-out;
-  }
 }
 
 @keyframes modal-fade {
@@ -447,7 +401,6 @@ body.modal-open {
     gap: 12px;
   }
 
-  .site-footer a,
   .nav-link {
     font-size: 12px;
   }
