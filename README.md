@@ -1,7 +1,8 @@
 # receipt.cafe
 
-`receipt.cafe` is a small public art project that turns visitor-submitted text
-messages into physical thermal receipts.
+receipts.cafe allows users to submit anonymous messages that are physically
+printed in real time as thermal receipts and digitally archived for anyone to
+view.
 
 Live site: [receipts.cafe](https://receipts.cafe)
 
