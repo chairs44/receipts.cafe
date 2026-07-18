@@ -3,11 +3,12 @@ set -euo pipefail
 
 export PATH="/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 
-PROJECT_DIR="/Users/davidsutrin/Library/Developer/receipt-drop"
-STATE_DIR="/Users/davidsutrin/Library/Application Support/receipt-cafe"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="${RECEIPT_CAFE_PROJECT_DIR:-$(cd "$SCRIPT_DIR/.." && pwd)}"
+STATE_DIR="${RECEIPT_CAFE_STATE_DIR:-$HOME/Library/Application Support/receipt.cafe}"
 STATE_FILE="$STATE_DIR/archive-sync-last-success"
 SYNC_AFTER="0910"
-NPM_BIN="/usr/local/bin/npm"
+NPM_BIN="${NPM_BIN:-$(command -v npm)}"
 
 mkdir -p "$STATE_DIR"
 
