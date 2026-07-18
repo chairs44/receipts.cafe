@@ -118,6 +118,4 @@ privacy and operational boundaries.
 
 ## License
 
-No open-source license has been added. Unless a license is added, the source
-is publicly viewable but reuse and redistribution are not automatically
-granted.
+Copyright (c) 2026 David Sutrin. All rights reserved. See [LICENSE](LICENSE).
