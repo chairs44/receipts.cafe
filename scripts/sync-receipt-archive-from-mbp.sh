@@ -2,8 +2,8 @@
 set -euo pipefail
 
 REMOTE="${RECEIPT_CAFE_REMOTE:-ds-mbp}"
-REMOTE_ARCHIVE="${RECEIPT_CAFE_REMOTE_ARCHIVE:-/Users/ddd/Library/Application Support/receipt.cafe/archive}"
-LOCAL_ARCHIVE="${RECEIPT_CAFE_LOCAL_ARCHIVE:-/Users/davidsutrin/Library/Mobile Documents/iCloud~md~obsidian/Documents/hub/projects/homelab/printer/receipt-cafe/archive}"
+REMOTE_ARCHIVE="${RECEIPT_CAFE_REMOTE_ARCHIVE:-~/Library/Application Support/receipt.cafe/archive}"
+LOCAL_ARCHIVE="${RECEIPT_CAFE_LOCAL_ARCHIVE:-$HOME/Library/Application Support/receipt.cafe/archive-mirror}"
 
 mkdir -p "$LOCAL_ARCHIVE/images"
 
