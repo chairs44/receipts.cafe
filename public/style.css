@@ -238,7 +238,7 @@ button:disabled {
 .modal-card {
   position: relative;
   z-index: 1;
-  width: min(760px, calc(100vw - 48px));
+  width: min(760px, 100%);
   height: min(720px, calc(100svh - 48px));
   overflow: hidden;
   display: flex;
@@ -463,8 +463,12 @@ body.modal-open {
     font-size: 12px;
   }
 
+  .modal {
+    padding: 20px 16px;
+  }
+
   .modal-card {
-    width: calc(100vw - 32px);
+    width: 100%;
     height: min(720px, calc(100svh - 40px));
   }
 
