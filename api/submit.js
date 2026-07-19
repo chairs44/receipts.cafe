@@ -41,6 +41,27 @@ function clientIp(req) {
   return req.headers["x-real-ip"] || "unknown";
 }
 
+function requestOrigin(req) {
+  const forwardedHost = req.headers["x-forwarded-host"];
+  const host = typeof forwardedHost === "string" && forwardedHost
+    ? forwardedHost.split(",")[0].trim()
+    : req.headers.host;
+  const forwardedProto = req.headers["x-forwarded-proto"];
+  const protocol = typeof forwardedProto === "string" && forwardedProto
+    ? forwardedProto.split(",")[0].trim()
+    : "https";
+
+  if (!host || !/^https?$/.test(protocol)) return null;
+  return `${protocol}://${host}`;
+}
+
+function isSameOriginJsonRequest(req) {
+  const contentType = String(req.headers["content-type"] || "").toLowerCase();
+  return contentType.startsWith("application/json")
+    && Boolean(req.headers.origin)
+    && req.headers.origin === requestOrigin(req);
+}
+
 function sanitizeMessage(value, maxChars) {
   const message = String(value || "")
     .replace(/[\u0000-\u001f\u007f]/g, " ")
@@ -65,6 +86,10 @@ export default async function handler(req, res) {
     return res.status(405).json({ ok: false, error: "Method not allowed." });
   }
 
+  if (!isSameOriginJsonRequest(req)) {
+    return res.status(403).json({ ok: false, error: "Submissions must come from receipts.cafe." });
+  }
+
   try {
     if (process.env.PRINT_ENABLED === "false") {
       return res.status(503).json({ ok: false, error: "Printer submissions are paused." });
@@ -76,7 +101,8 @@ export default async function handler(req, res) {
     const maxChars = settingInt("MESSAGE_MAX_CHARS", 300);
     const rateMax = settingInt("RATE_LIMIT_MAX", 3);
     const rateWindow = settingInt("RATE_LIMIT_WINDOW_SECONDS", 3600);
-    const dailyLimit = settingInt("DAILY_LIMIT", 30);
+    const dailyLimit = settingInt("DAILY_LIMIT", 100);
+    const dailyIpLimit = settingInt("DAILY_IP_LIMIT", 10);
     const sanitized = sanitizeMessage(body.message, maxChars);
     if (sanitized.error) return res.status(400).json({ ok: false, error: sanitized.error });
 
@@ -85,12 +111,18 @@ export default async function handler(req, res) {
     const rateKey = `receipt-drop:rate:${ipHash}`;
     const day = new Date().toISOString().slice(0, 10);
     const dailyKey = `receipt-drop:daily:${day}`;
+    const dailyIpKey = `receipt-drop:daily:${day}:${ipHash}`;
     const duplicateHash = createHash("sha256").update(sanitized.message.toLowerCase()).digest("hex");
     const duplicateKey = `receipt-drop:dupe:${duplicateHash}`;
 
     const rateCount = await incrementWithExpiry(rateKey, rateWindow);
     if (rateCount > rateMax) {
       return res.status(429).json({ ok: false, error: "Slow down. Try again later." });
+    }
+
+    const dailyIpCount = await incrementWithExpiry(dailyIpKey, 36 * 60 * 60);
+    if (dailyIpCount > dailyIpLimit) {
+      return res.status(429).json({ ok: false, error: "You've sent enough messages for today." });
     }
 
     const dailyCount = await incrementWithExpiry(dailyKey, 36 * 60 * 60);
