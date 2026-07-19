@@ -21,9 +21,11 @@ The public Vercel deployment never connects directly to the home network. The
 always-on Mac is the print worker. A development Mac is used for source changes
 and deployments, but is not required for normal printing.
 
-The repository contains the public site, Vercel API routes, and poller source.
-Private runtime configuration, message archives, printer output, and
-machine-specific launch-agent files stay outside the repository.
+The repository contains the public site, Vercel API routes, and a portable copy
+of the poller source. The live poller is installed separately on the always-on
+Mac and is not updated automatically by GitHub or Vercel. Private runtime
+configuration, message archives, printer output, and machine-specific
+launch-agent files stay outside the repository.
 
 ## Production Behavior
 
@@ -87,6 +89,14 @@ The file should contain the production URL, private poll token, printer name,
 poll interval, and local print mode. It must remain outside Git and have
 restrictive permissions.
 
+### Runtime Worker Deployment
+
+Changes to `scripts/receipt-drop-poller.py` do not reach the live printer worker
+automatically. Deploy poller changes deliberately to the always-on Mac, verify
+the local printer queue and worker state, and keep its environment file and
+launch-agent configuration machine-local. Website deployments can continue
+independently through Vercel.
+
 ## Archive And Privacy
 
 The authoritative receipt archive is kept on the always-on Mac outside this
@@ -108,6 +118,11 @@ deployment from `main`.
 
 The Vercel project and its environment variables are managed in Vercel, not in
 this repository. Do not commit `.env` files or `.vercel/` metadata.
+
+The repository may be viewed publicly. Keep operational documentation generic:
+do not add real hostnames, IP addresses, usernames, absolute local paths,
+credentials, Redis exports, poller environment files, launch-agent plists, or
+visitor archives to commits, issues, pull requests, or screenshots.
 
 ## Scope And Status
 
