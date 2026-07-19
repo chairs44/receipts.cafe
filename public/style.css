@@ -324,6 +324,33 @@ button:disabled {
   text-align: center;
 }
 
+.archive-total {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.archive-total-label,
+.archive-total-value {
+  color: var(--text);
+  font-family: "Geist Pixel Grid", system-ui, sans-serif;
+  font-weight: 400;
+  line-height: 1.2;
+  text-align: center;
+}
+
+.archive-total-label {
+  font-size: 15px;
+}
+
+.archive-total-value {
+  min-width: 4ch;
+  margin: 0;
+  font-size: clamp(34px, 7vw, 48px);
+  font-variant-numeric: tabular-nums;
+}
+
 .about-copy a {
   color: inherit;
   text-decoration: underline;
@@ -383,6 +410,10 @@ body.modal-open {
     transition: color 120ms ease-out;
   }
 
+  .archive-total-value.is-updating {
+    animation: archive-total-pulse 440ms ease-out;
+  }
+
 }
 
 @keyframes modal-fade {
@@ -395,6 +426,22 @@ body.modal-open {
   from {
     opacity: 0;
     transform: translateY(8px) scale(0.985);
+  }
+}
+
+@keyframes archive-total-pulse {
+  0% {
+    opacity: 0.72;
+    transform: translateY(3px);
+  }
+
+  60% {
+    opacity: 1;
+    transform: translateY(-1px);
+  }
+
+  100% {
+    transform: translateY(0);
   }
 }
 
