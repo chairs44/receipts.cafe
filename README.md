@@ -29,7 +29,7 @@ launch-agent files stay outside the repository.
 
 ## Production Behavior
 
-- `/api/submit` validates and rate-limits visitor messages.
+- `/api/submit` accepts same-origin JSON submissions, validates them, and rate-limits visitor messages.
 - Accepted messages are added to the Redis queue.
 - The Mac poller authenticates to `/api/poll` with a private bearer token.
 - The poller claims a message, renders the shared receipt template locally,
@@ -40,9 +40,12 @@ launch-agent files stay outside the repository.
 - `/api/status` powers the public printer status indicator.
 
 The current public limits are 300 characters per message, 3 messages per IP
-per hour, 30 messages per day, duplicate suppression, link rejection, and a
-honeypot field for simple bots. These limits are operational safeguards, not a
-promise that every submitted message will be printed immediately.
+per hour, 10 messages per IP per day, and 100 messages globally per day. The
+per-IP limits limit individual senders; the global limit is a printer-wide
+circuit breaker. Duplicate suppression, link rejection, a honeypot field, and
+same-origin JSON-only submission handling provide additional lightweight abuse
+protection. These limits are operational safeguards, not a promise that every
+submitted message will be printed immediately.
 
 ## Local Development
 
@@ -74,6 +77,7 @@ PRINT_ENABLED
 RATE_LIMIT_MAX
 RATE_LIMIT_WINDOW_SECONDS
 DAILY_LIMIT
+DAILY_IP_LIMIT
 MESSAGE_MAX_CHARS
 INFLIGHT_STALE_SECONDS
 ```
@@ -117,7 +121,10 @@ The `main` branch is connected to the Vercel project that serves
 deployment from `main`.
 
 The Vercel project and its environment variables are managed in Vercel, not in
-this repository. Do not commit `.env` files or `.vercel/` metadata.
+this repository. Do not commit `.env` files or `.vercel/` metadata. `vercel.json`
+also sets baseline browser response protections: a restrictive content security
+policy, anti-framing protection, no-sniff, referrer, permissions, and HTTPS
+transport headers.
 
 The repository may be viewed publicly. Keep operational documentation generic:
 do not add real hostnames, IP addresses, usernames, absolute local paths,
