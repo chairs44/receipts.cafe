@@ -14,9 +14,13 @@ const archiveOpen = document.querySelector("#archive-open");
 const archiveModal = document.querySelector("#archive-modal");
 const archiveClose = document.querySelector("#archive-close");
 const archiveX = document.querySelector("#archive-x");
+const archiveTotal = document.querySelector("#archive-total");
 const maxChars = 300;
+const archiveRefreshMs = 60 * 1000;
 let printerOnline = false;
 let lastFocusedElement = null;
+let archiveRefreshTimer = null;
+let archiveDisplayedTotal = null;
 
 function setStatus(text, kind = "info") {
   status.textContent = text;
@@ -44,6 +48,73 @@ async function refreshPrinterState() {
   }
 }
 
+
+
+function displayArchiveTotal(total) {
+  if (!archiveTotal || !Number.isFinite(total)) return;
+
+  const previousTotal = archiveDisplayedTotal;
+  archiveDisplayedTotal = total;
+
+  if (
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches ||
+    previousTotal === null ||
+    previousTotal === total
+  ) {
+    archiveTotal.textContent = total.toLocaleString();
+    return;
+  }
+
+  const startedAt = performance.now();
+  const duration = 600;
+
+  archiveTotal.classList.remove("is-updating");
+  void archiveTotal.offsetWidth;
+  archiveTotal.classList.add("is-updating");
+
+  function update(now) {
+    const progress = Math.min((now - startedAt) / duration, 1);
+    const eased = 1 - Math.pow(1 - progress, 3);
+    const value = Math.round(previousTotal + (total - previousTotal) * eased);
+    archiveTotal.textContent = value.toLocaleString();
+
+    if (progress < 1) {
+      requestAnimationFrame(update);
+    } else {
+      archiveTotal.textContent = total.toLocaleString();
+      archiveTotal.classList.remove("is-updating");
+    }
+  }
+
+  requestAnimationFrame(update);
+}
+
+async function refreshArchiveTotal() {
+  try {
+    const response = await fetch("/api/archive-status", { cache: "no-store" });
+    const data = await response.json();
+    if (!response.ok || !data.ok || !Number.isFinite(data.totalMessages)) {
+      throw new Error("Archive status unavailable.");
+    }
+    displayArchiveTotal(data.totalMessages);
+  } catch {
+    if (archiveDisplayedTotal === null && archiveTotal) {
+      archiveTotal.textContent = "--";
+    }
+  }
+}
+
+function startArchiveRefresh() {
+  refreshArchiveTotal();
+  window.clearInterval(archiveRefreshTimer);
+  archiveRefreshTimer = window.setInterval(refreshArchiveTotal, archiveRefreshMs);
+}
+
+function stopArchiveRefresh() {
+  window.clearInterval(archiveRefreshTimer);
+  archiveRefreshTimer = null;
+}
+
 message.addEventListener("input", updateCount);
 
 function openModal(modal, closeButton) {
@@ -55,6 +126,7 @@ function openModal(modal, closeButton) {
 }
 
 function closeModal(modal) {
+  if (modal === archiveModal) stopArchiveRefresh();
   modal.hidden = true;
   document.body.classList.remove("modal-open");
   if (lastFocusedElement) lastFocusedElement.focus();
@@ -63,7 +135,10 @@ function closeModal(modal) {
 aboutOpen.addEventListener("click", () => openModal(aboutModal, aboutX));
 aboutClose.addEventListener("click", () => closeModal(aboutModal));
 aboutX.addEventListener("click", () => closeModal(aboutModal));
-archiveOpen.addEventListener("click", () => openModal(archiveModal, archiveX));
+archiveOpen.addEventListener("click", () => {
+  openModal(archiveModal, archiveX);
+  startArchiveRefresh();
+});
 archiveClose.addEventListener("click", () => closeModal(archiveModal));
 archiveX.addEventListener("click", () => closeModal(archiveModal));
 
