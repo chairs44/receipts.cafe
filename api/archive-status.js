@@ -1,6 +1,6 @@
 import { Redis } from "@upstash/redis";
 
-const PRINTED_LOG_KEY = "receipt-drop:printed";
+const MESSAGE_LOG_KEY = "receipt-drop:log";
 
 let redis;
 
@@ -36,7 +36,7 @@ export default async function handler(req, res) {
   res.setHeader("Cache-Control", "no-store");
 
   try {
-    const totalMessages = await getRedis().llen(PRINTED_LOG_KEY);
+    const totalMessages = await getRedis().llen(MESSAGE_LOG_KEY);
 
     return res.status(200).json({
       ok: true,
