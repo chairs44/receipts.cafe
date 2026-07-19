@@ -184,6 +184,32 @@ button:disabled {
   color: var(--danger);
 }
 
+.site-x-link {
+  position: fixed;
+  left: 50%;
+  bottom: max(18px, env(safe-area-inset-bottom));
+  z-index: 10;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  color: var(--muted);
+  transform: translateX(-50%);
+  transition: color 120ms ease-out;
+}
+
+.site-x-link svg {
+  width: 14px;
+  height: 14px;
+  fill: currentColor;
+}
+
+.site-x-link:hover,
+.site-x-link:focus-visible {
+  color: var(--text);
+  outline: none;
+}
+
 .site-nav {
   position: fixed;
   top: max(18px, env(safe-area-inset-top));
