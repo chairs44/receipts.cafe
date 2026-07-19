@@ -11,6 +11,7 @@
     "sync:archive": "bash scripts/sync-receipt-archive-from-mbp.sh"
   },
   "dependencies": {
-    "@upstash/redis": "^1.35.3"
+    "@upstash/redis": "^1.35.3",
+    "@vercel/speed-insights": "^2.0.0"
   }
 }
