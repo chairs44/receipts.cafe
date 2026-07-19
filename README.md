@@ -38,6 +38,7 @@ launch-agent files stay outside the repository.
 - Stale in-flight claims are recovered automatically after the configured
   timeout.
 - `/api/status` powers the public printer status indicator.
+- `/api/archive-status` provides the public archive dialog with the current count of confirmed printed messages.
 
 The current public limits are 300 characters per message, 3 messages per IP
 per hour, 10 messages per IP per day, and 100 messages globally per day. The
