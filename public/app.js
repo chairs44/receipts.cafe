@@ -53,40 +53,77 @@ async function refreshPrinterState() {
 function displayArchiveTotal(total) {
   if (!archiveTotal || !Number.isFinite(total)) return;
 
+  const nextTotal = Math.max(0, Math.trunc(total));
   const previousTotal = archiveDisplayedTotal;
-  archiveDisplayedTotal = total;
+  archiveDisplayedTotal = nextTotal;
+  const nextText = nextTotal.toLocaleString();
 
   if (
     window.matchMedia("(prefers-reduced-motion: reduce)").matches ||
     previousTotal === null ||
-    previousTotal === total
+    previousTotal === nextTotal
   ) {
-    archiveTotal.textContent = total.toLocaleString();
+    archiveTotal.classList.remove("is-reel");
+    archiveTotal.textContent = nextText;
+    archiveTotal.setAttribute("aria-label", `Total messages received: ${nextText}`);
     return;
   }
 
-  const startedAt = performance.now();
-  const duration = 600;
+  renderArchiveReels(nextText);
+}
 
-  archiveTotal.classList.remove("is-updating");
-  void archiveTotal.offsetWidth;
-  archiveTotal.classList.add("is-updating");
+function renderArchiveReels(value) {
+  archiveTotal.replaceChildren();
+  archiveTotal.classList.add("is-reel");
+  archiveTotal.setAttribute("aria-label", `Total messages received: ${value}`);
 
-  function update(now) {
-    const progress = Math.min((now - startedAt) / duration, 1);
-    const eased = 1 - Math.pow(1 - progress, 3);
-    const value = Math.round(previousTotal + (total - previousTotal) * eased);
-    archiveTotal.textContent = value.toLocaleString();
+  const digitCount = [...value].filter((character) => /\\d/.test(character)).length;
+  let digitIndex = 0;
 
-    if (progress < 1) {
-      requestAnimationFrame(update);
-    } else {
-      archiveTotal.textContent = total.toLocaleString();
-      archiveTotal.classList.remove("is-updating");
+  for (const character of value) {
+    if (!/\\d/.test(character)) {
+      const separator = document.createElement("span");
+      separator.className = "archive-total-separator";
+      separator.textContent = character;
+      separator.setAttribute("aria-hidden", "true");
+      archiveTotal.append(separator);
+      continue;
     }
+
+    const column = document.createElement("span");
+    const strip = document.createElement("span");
+    const digit = Number(character);
+    const cycles = digitIndex % 2 === 0 ? 2 : 3;
+
+    column.className = "archive-total-reel-col";
+    strip.className = "archive-total-reel-strip";
+    column.style.setProperty("--reel-delay", `${digitIndex * 55}ms`);
+    column.style.setProperty("--reel-step", String(cycles * 10 + digit));
+
+    for (let cycle = 0; cycle <= cycles; cycle += 1) {
+      for (let value = 0; value <= 9; value += 1) {
+        const cell = document.createElement("span");
+        cell.className = "archive-total-reel-digit";
+        cell.textContent = value;
+        cell.setAttribute("aria-hidden", "true");
+        strip.append(cell);
+      }
+    }
+
+    column.append(strip);
+    archiveTotal.append(column);
+    digitIndex += 1;
   }
 
-  requestAnimationFrame(update);
+  requestAnimationFrame(() => {
+    archiveTotal.querySelectorAll(".archive-total-reel-col").forEach((column) => {
+      column.classList.add("is-rolling");
+    });
+  });
+
+  if (digitIndex !== digitCount) {
+    archiveTotal.textContent = value;
+  }
 }
 
 async function refreshArchiveTotal() {
