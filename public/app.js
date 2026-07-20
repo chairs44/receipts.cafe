@@ -28,7 +28,7 @@ function setStatus(text, kind = "info") {
 }
 
 function updateCount() {
-  chars.textContent = `${maxChars - message.value.length} chars left`;
+  chars.textContent = `${maxChars - message.value.length} characters left`;
   send.disabled = !message.value.trim();
 }
 
