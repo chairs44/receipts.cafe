@@ -405,7 +405,7 @@ button:disabled {
 }
 
 .archive-total-reel-col.is-rolling .archive-total-reel-strip {
-  transform: translateY(calc(var(--reel-step) * var(--reel-cell) * -1));
+  transform: translateY(var(--reel-offset));
 }
 
 .archive-total-reel-digit {
