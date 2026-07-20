@@ -98,7 +98,7 @@ function renderArchiveReels(value) {
     column.className = "archive-total-reel-col";
     strip.className = "archive-total-reel-strip";
     column.style.setProperty("--reel-delay", `${digitIndex * 55}ms`);
-    column.style.setProperty("--reel-step", String(cycles * 10 + digit));
+    column.style.setProperty("--reel-offset", `-${(cycles * 10 + digit) * 1.18}em`);
 
     for (let cycle = 0; cycle <= cycles; cycle += 1) {
       for (let value = 0; value <= 9; value += 1) {
