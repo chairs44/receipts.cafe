@@ -563,3 +563,40 @@ body.modal-open {
     line-height: 27px;
   }
 }
+
+
+/* Archive count has a quiet heartbeat between real-time refreshes. */
+#archive-total {
+  display: inline-block;
+  transform-origin: center;
+  will-change: transform, opacity, text-shadow;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  #archive-total {
+    animation: archive-total-liveness 2.8s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+  }
+}
+
+@keyframes archive-total-liveness {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 0.78;
+    text-shadow: 0 0 0 rgba(242, 242, 236, 0);
+  }
+
+  36% {
+    transform: translateY(-2px) scale(1.045);
+    opacity: 1;
+    text-shadow:
+      0 0 16px rgba(242, 242, 236, 0.72),
+      0 0 3px rgba(242, 242, 236, 0.95);
+  }
+
+  58% {
+    transform: translateY(0) scale(1);
+    opacity: 0.94;
+    text-shadow: 0 0 5px rgba(242, 242, 236, 0.28);
+  }
+}
