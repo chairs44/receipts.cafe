@@ -1,37 +1,39 @@
-# receipts.cafe
+<h1 align="center">receipts.cafe</h1>
 
-> Anonymous messages, physically printed as thermal receipts.
+<p align="center">
+  <strong>Anonymous messages, physically printed as thermal receipts.</strong><br>
+  A small public art project connecting a browser to a thermal printer.
+</p>
 
-[Live site](https://receipts.cafe) · [Security policy](SECURITY.md) · [Contributing](CONTRIBUTING.md)
+<p align="center">
+  <a href="https://receipts.cafe">Visit receipts.cafe</a> ·
+  <a href="#how-it-works">How it works</a> ·
+  <a href="#local-development">Local development</a> ·
+  <a href="CONTRIBUTING.md">Contributing</a>
+</p>
 
-receipts.cafe is a small public art project. A visitor submits a short anonymous
-message online; an always-on local print worker renders it as a receipt and
-prints it on an Epson TM-T88V thermal printer.
+---
 
-## At A Glance
+A visitor submits a short anonymous message online. An always-on local print
+worker turns it into a receipt and prints it on an Epson TM-T88V thermal printer.
 
-| | |
+## At a glance
+
+| Component | Details |
 | --- | --- |
 | Public interface | Text-only anonymous message submission |
 | Delivery path | Vercel → Upstash Redis → local print worker → CUPS |
-| Runtime printer | Epson TM-T88V thermal printer |
-| Website | [receipts.cafe](https://receipts.cafe) |
+| Printer | Epson TM-T88V thermal printer |
 | Archive | Private while the visual archive is being prepared |
 
-The public Vercel deployment never connects directly to the home network or
-printer. The always-on Mac runs the isolated print worker. A development Mac is
-used for source changes and deployments, but is not required for normal
-printing.
+> [!NOTE]
+> The public website never connects directly to the home network or printer.
+> Printing runs through an isolated worker on an always-on Mac.
 
-## How It Works
+## How it works
 
 ```text
-visitor
-  → Vercel web app and API
-  → Upstash Redis queue
-  → always-on Mac poller
-  → CUPS
-  → Epson TM-T88V thermal printer
+Browser → Vercel API → Redis queue → Local worker → CUPS → Printed receipt
 ```
 
 1. A visitor submits a short message through the website.
@@ -43,21 +45,42 @@ visitor
 5. If the printer is unavailable, the message stays queued. Stale in-flight
    claims recover automatically.
 
-## Public Safeguards
+## Public safeguards
 
-- 300 characters per message
-- 3 messages per IP per hour
-- 10 messages per IP per day
-- 100 messages globally per day
-- Duplicate suppression, link rejection, a honeypot field, and same-origin
-  JSON submission handling
-- A private bearer token protects poller routes
+| Limit | Allowance |
+| --- | --- |
+| Message length | 300 characters |
+| Per IP, per hour | 3 messages |
+| Per IP, per day | 10 messages |
+| Across the site, per day | 100 messages |
 
-These limits are operational safeguards, not a promise that every message prints
-immediately. Do not submit passwords, private information, or anything that
-must remain confidential.
+Additional protections include duplicate suppression, link rejection, a honeypot
+field, and same-origin JSON submission handling. A private bearer token protects
+poller routes.
 
-## Repository Boundaries
+> [!IMPORTANT]
+> These limits do not guarantee immediate printing. Do not submit passwords,
+> private information, or anything that must remain confidential.
+
+## Local development
+
+The default preview uses a **credential-free stub**. It never writes to Redis or
+prints.
+
+```bash
+npm install
+npm run check
+npm run dev
+```
+
+For real deployment testing, use a private `.env.local` file that is ignored
+by Git. Never commit environment files, Vercel metadata, private messages,
+archives, or local machine configuration.
+
+## Operations and privacy
+
+<details>
+<summary><strong>What belongs in this repository</strong></summary>
 
 This repository contains the public site, Vercel API routes, and a portable copy
 of the poller source. It intentionally does **not** include:
@@ -72,22 +95,10 @@ The live poller is installed separately on the always-on Mac. Changes to
 worker deployment. GitHub and Vercel deployments do not update the printer
 worker automatically.
 
-## Local Development
+</details>
 
-The normal local preview uses a credential-free stub. It never writes to Redis
-or prints.
-
-```bash
-npm install
-npm run check
-npm run dev
-```
-
-For real deployment testing, use a private `.env.local` file that is ignored
-by Git. Never commit environment files, Vercel metadata, private messages,
-archives, or local machine configuration.
-
-## Deployment
+<details>
+<summary><strong>Website and worker deployment</strong></summary>
 
 The `main` branch deploys to Vercel and serves
 [receipts.cafe](https://receipts.cafe). Review changes locally, run
@@ -97,6 +108,11 @@ The Vercel project owns production environment variables. `vercel.json`
 provides baseline browser protections including a restrictive content security
 policy, anti-framing protection, no-sniff, referrer, permissions, and HTTPS
 transport headers.
+
+A development Mac is used for source changes and deployments, but is not
+required for normal printing. The always-on Mac runs the isolated print worker.
+
+</details>
 
 ## Contributing
 
@@ -108,3 +124,7 @@ a pull request or reporting a problem.
 
 Copyright (c) 2026 David Sutrin. All rights reserved. See
 [LICENSE](LICENSE).
+
+---
+
+Created by [David Sutrin](https://www.davidsutrin.xyz).
