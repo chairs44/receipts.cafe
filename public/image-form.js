@@ -7,13 +7,18 @@ const discard = byId('discard'), back = byId('back-text'), open = byId('upload-i
 const status = byId('image-status'), hint = byId('crop-help'), heading = document.querySelector('h1');
 const originalTitle = heading.textContent.trim(), originalHint = hint.textContent;
 const ctx = canvas.getContext('2d', {willReadFrequently:true});
-let source, raster, revision = 0, frame = 0, x = 0, y = 0, width, height, drag, sending = false;
+const tone = byId("tone"), brightness = byId("brightness"), contrast = byId("contrast");
+const pointers = new Map();
+let source, raster, revision = 0, frame = 0, x = 0, y = 0, width, height, sending = false;
 
 function reset() {
   revision++;
   cancelAnimationFrame(frame);
   source?.close();
-  source = raster = drag = null;
+  source = raster = null;
+  pointers.clear();
+  tone.hidden = true;
+  brightness.value = contrast.value = '0';
   file.value = '';
   picker.hidden = false;
   canvas.hidden = discard.hidden = true;
@@ -45,7 +50,7 @@ function paint() {
   ctx.fillRect(0, 0, 512, 512);
   ctx.drawImage(source, x, y, width, height);
   const data = ctx.getImageData(0, 0, 512, 512);
-  const pixels = monochrome(data.data, 512, 512);
+  const pixels = monochrome(data.data, 512, 512, Number(brightness.value), Number(contrast.value));
   const packed = new Uint8Array(32768);
   for (let i = 0; i < pixels.length; i++) {
     data.data.fill(pixels[i], 4*i, 4*i+3);
@@ -71,7 +76,8 @@ async function select(image) {
     x = (512-width)/2; y = (512-height)/2;
     picker.hidden = true;
     canvas.hidden = discard.hidden = false;
-    hint.textContent = 'Drag image to crop';
+    tone.hidden = false;
+    hint.textContent = 'Drag to crop · Pinch or scroll to zoom';
     paint();
     canvas.focus();
   } catch (error) {
@@ -90,26 +96,56 @@ function move(dx, dy) {
   cancelAnimationFrame(frame);
   frame = requestAnimationFrame(paint);
 }
+tone.oninput = () => move(0, 0);
+
+function position(event) {
+  const rect = canvas.getBoundingClientRect();
+  return {x:(event.clientX-rect.left)*512/rect.width, y:(event.clientY-rect.top)*512/rect.height};
+}
+function zoomAt(factor, from, to = from) {
+  if (!source || sending) return;
+  const size = Math.min(width,height);
+  const scale = Math.max(512, Math.min(2048, size*factor)) / size;
+  x = to.x - (from.x-x)*scale;
+  y = to.y - (from.y-y)*scale;
+  width *= scale;
+  height *= scale;
+  move(0,0);
+}
+const midpoint = (a,b) => ({x:(a.x+b.x)/2, y:(a.y+b.y)/2});
+const distance = (a,b) => Math.hypot(a.x-b.x,a.y-b.y);
 canvas.onpointerdown = e => {
-  if (!e.isPrimary || e.button !== 0 || sending) return;
+  if (sending || e.button !== 0 || pointers.size >= 2) return;
   canvas.setPointerCapture(e.pointerId);
-  drag = {x:e.clientX, y:e.clientY};
+  pointers.set(e.pointerId, position(e));
 };
 canvas.onpointermove = e => {
-  if (!drag || !canvas.hasPointerCapture(e.pointerId)) return;
-  const factor = 512/canvas.getBoundingClientRect().width;
-  move((e.clientX-drag.x)*factor, (e.clientY-drag.y)*factor);
-  drag = {x:e.clientX, y:e.clientY};
+  const prev = pointers.get(e.pointerId);
+  if (!prev) return;
+  const next = position(e);
+  pointers.set(e.pointerId,next);
+  if (pointers.size === 1) return move(next.x-prev.x,next.y-prev.y);
+  const other = [...pointers.entries()].find(([id]) => id !== e.pointerId)[1];
+  zoomAt(distance(next,other)/Math.max(1,distance(prev,other)), midpoint(prev,other), midpoint(next,other));
 };
-canvas.onlostpointercapture = () => { drag = null; };
+canvas.onpointerup = canvas.onpointercancel = canvas.onlostpointercapture = e => pointers.delete(e.pointerId);
+canvas.addEventListener('wheel', e => {
+  e.preventDefault();
+  zoomAt(Math.exp(-Math.sign(e.deltaY)*0.08), position(e));
+}, {passive:false});
 canvas.onkeydown = e => {
+  if (['+','=','-'].includes(e.key)) {
+    e.preventDefault();
+    zoomAt(e.key === '-' ? 1/1.15 : 1.15, {x:256,y:256});
+    return;
+  }
   const delta = {ArrowLeft:[-8,0], ArrowRight:[8,0], ArrowUp:[0,-8], ArrowDown:[0,8]}[e.key];
   if (delta) { e.preventDefault(); move(...delta); }
 };
 form.onsubmit = async e => {
   e.preventDefault();
   if (!raster || send.disabled || sending) return;
-  sending = send.disabled = discard.disabled = back.disabled = true;
+  tone.disabled = sending = send.disabled = discard.disabled = back.disabled = true;
   status.textContent = 'Sending...';
   try {
     const response = await fetch('/api/submit', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({kind:'image', raster})});
@@ -119,5 +155,5 @@ form.onsubmit = async e => {
     showText();
     byId('status').textContent = 'Your image is queued for printing.';
   } catch (error) { status.textContent = error.message; }
-  finally { sending = discard.disabled = back.disabled = false; send.disabled = !raster; }
+  finally { tone.disabled = sending = discard.disabled = back.disabled = false; send.disabled = !raster; }
 };

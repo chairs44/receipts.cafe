@@ -43,10 +43,15 @@
         <form id="image-form" hidden>
           <div id="image-box">
             <div id="image-picker"><label for="pick-file">Choose image</label><input id="pick-file" type="file" accept="image/png,image/jpeg,image/webp"><small>or drop one here</small></div>
-            <canvas id="proof" width="512" height="512" tabindex="0" aria-label="Crop preview. Drag or use arrow keys to reposition." hidden></canvas>
+            <canvas id="proof" width="512" height="512" tabindex="0" aria-label="Crop preview. Drag or use arrow keys to reposition. Pinch or use plus and minus to zoom." hidden></canvas>
             <button type="button" id="discard" aria-label="Cancel image and return to text" hidden>×</button>
           </div>
           <small id="crop-help">JPEG, PNG or WebP · up to 10 MB</small>
+          <fieldset id="tone" hidden>
+            <legend class="sr-only">Image adjustments</legend>
+            <label>Brightness<input id="brightness" type="range" min="-80" max="80" value="0"></label>
+            <label>Contrast<input id="contrast" type="range" min="-80" max="80" value="0"></label>
+          </fieldset>
           <button id="image-send" disabled>Send</button>
           <button class="secondary" id="back-text" type="button">Back to text</button>
           <div class="status" id="image-status" role="status"></div>

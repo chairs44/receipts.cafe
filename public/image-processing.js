@@ -1,9 +1,11 @@
 // Deterministic Floyd–Steinberg conversion; transparent pixels print as paper.
-export function monochrome(rgba, width, height, brightness = 0) {
+export function monochrome(rgba, width, height, brightness = 0, contrast = 0) {
   const gray = new Float32Array(width * height);
+  const gain = 2 ** (contrast / 50);
   for (let i = 0; i < gray.length; i++) {
     const a = rgba[i * 4 + 3] / 255;
-    gray[i] = (0.2126 * rgba[i*4] + 0.7152 * rgba[i*4+1] + 0.0722 * rgba[i*4+2]) * a + 255 * (1-a) + brightness;
+    const luminance = (0.2126 * rgba[i*4] + 0.7152 * rgba[i*4+1] + 0.0722 * rgba[i*4+2]) * a + 255 * (1-a);
+    gray[i] = (luminance - 127.5) * gain + 127.5 + brightness;
   }
   const out = new Uint8Array(gray.length);
   for (let y=0; y<height; y++) for (let x=0; x<width; x++) {
