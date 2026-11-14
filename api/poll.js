@@ -105,7 +105,7 @@ async function recoverStaleInflight(redisClient) {
     await redisClient.lpush(
       RECOVERED_LOG_KEY,
       JSON.stringify({
-        ...recoveredItem,
+        ...recoveredItem, raster: undefined,
         staleClaimedAt: item.claimedAt || item?.claim?.claimedAt || null,
       })
     );

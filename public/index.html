@@ -37,7 +37,19 @@
             <span>3 messages / hour</span>
           </div>
           <button id="send" type="submit">Send</button>
+          <button id="upload-image" type="button" class="secondary">Upload Image</button>
           <div id="status" class="status" role="status" aria-live="polite"></div>
+        </form>
+        <form id="image-form" hidden>
+          <div id="image-box">
+            <div id="image-picker"><label for="pick-file">Choose image</label><input id="pick-file" type="file" accept="image/png,image/jpeg,image/webp"><small>or drop one here</small></div>
+            <canvas id="proof" width="512" height="512" tabindex="0" aria-label="Crop preview. Drag or use arrow keys to reposition." hidden></canvas>
+            <button type="button" id="discard" aria-label="Cancel image and return to text" hidden>×</button>
+          </div>
+          <small id="crop-help">JPEG, PNG or WebP · up to 10 MB</small>
+          <button id="image-send" disabled>Send</button>
+          <button class="secondary" id="back-text" type="button">Back to text</button>
+          <div class="status" id="image-status" role="status"></div>
         </form>
       </section>
     </main>
@@ -103,5 +115,6 @@
 
     <script defer src="/_vercel/insights/script.js"></script>
     <script src="/app.js"></script>
+  <script type="module" src="/image-form.js"></script>
   </body>
 </html>

@@ -57,7 +57,7 @@ export default async function handler(req, res) {
     const redisClient = getRedis();
     const removed = await redisClient.lrem(INFLIGHT_KEY, 1, serialized);
 
-    await redisClient.lpush(PRINTED_LOG_KEY, JSON.stringify({ ...item, printedAt }));
+    await redisClient.lpush(PRINTED_LOG_KEY, JSON.stringify({ ...item, raster: undefined, printedAt }));
     await redisClient.ltrim(PRINTED_LOG_KEY, 0, PRINTED_LOG_RETENTION - 1);
     await redisClient.set(LAST_PRINTED_KEY, printedAt, { ex: 7 * 24 * 60 * 60 });
 

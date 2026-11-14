@@ -103,7 +103,15 @@ export default async function handler(req, res) {
     const rateWindow = settingInt("RATE_LIMIT_WINDOW_SECONDS", 3600);
     const dailyLimit = settingInt("DAILY_LIMIT", 100);
     const dailyIpLimit = settingInt("DAILY_IP_LIMIT", 10);
-    const sanitized = sanitizeMessage(body.message, maxChars);
+    const isImage = body.kind === "image";
+    if (body.kind && !["text", "image"].includes(body.kind)) return res.status(400).json({ok:false,error:"Invalid receipt type."});
+    // 512 × 512 monochrome pixels, packed MSB first. No file parser or remote URL.
+    if (isImage && (body.message || typeof body.raster !== "string" || body.raster.length !== 43692 ||
+        !/^[A-Za-z0-9+/]{43691}=$/.test(body.raster) ||
+        Buffer.from(body.raster, "base64").toString("base64") !== body.raster)) {
+      return res.status(400).json({ok:false,error:"Invalid image crop."});
+    }
+    const sanitized = isImage ? {message:"[Image receipt]"} : sanitizeMessage(body.message, maxChars);
     if (sanitized.error) return res.status(400).json({ ok: false, error: sanitized.error });
 
     const redisClient = getRedis();
@@ -112,7 +120,7 @@ export default async function handler(req, res) {
     const day = new Date().toISOString().slice(0, 10);
     const dailyKey = `receipt-drop:daily:${day}`;
     const dailyIpKey = `receipt-drop:daily:${day}:${ipHash}`;
-    const duplicateHash = createHash("sha256").update(sanitized.message.toLowerCase()).digest("hex");
+    const duplicateHash = createHash("sha256").update(isImage ? body.raster : sanitized.message.toLowerCase()).digest("hex");
     const duplicateKey = `receipt-drop:dupe:${duplicateHash}`;
 
     const rateCount = await incrementWithExpiry(rateKey, rateWindow);
@@ -140,11 +148,14 @@ export default async function handler(req, res) {
       message: sanitized.message,
       createdAt: new Date().toISOString(),
       ipHash,
+      ...(isImage ? {kind:"image", width:512, height:512, sha256:createHash("sha256").update(Buffer.from(body.raster, "base64")).digest("hex")} : {}),
     };
 
-    await redisClient.rpush(QUEUE_KEY, JSON.stringify(item));
-    await redisClient.lpush(LOG_KEY, JSON.stringify(item));
-    await redisClient.ltrim(LOG_KEY, 0, LOG_RETENTION - 1);
+    const tx = redisClient.multi();
+    tx.rpush(QUEUE_KEY, JSON.stringify(isImage ? {...item, raster:body.raster} : item));
+    tx.lpush(LOG_KEY, JSON.stringify(item));
+    tx.ltrim(LOG_KEY, 0, LOG_RETENTION - 1);
+    await tx.exec();
 
     return res.status(200).json({ ok: true });
   } catch (error) {

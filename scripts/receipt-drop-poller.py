@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import base64
 import json
 import os
 import csv
@@ -135,6 +136,12 @@ def receipt_layout(item):
 def render_receipt_image(item):
     from PIL import Image, ImageDraw
 
+    if item.get("kind") == "image":
+        raster = base64.b64decode(item["raster"], validate=True)
+        if len(raster) != 32768:
+            raise ValueError("Invalid image receipt size")
+        return Image.frombytes("1", (512, 512), raster)
+
     title_font, body_font, meta_font, message_lines = receipt_layout(item)
     img = Image.new("L", (RECEIPT_PIXEL_WIDTH, 2000), 255)
     draw = ImageDraw.Draw(img)
@@ -170,6 +177,8 @@ def render_receipt_image(item):
 
 
 def render(item):
+    if item.get("kind") == "image":
+        return f"{RECEIPT_TITLE}\n[Image receipt: 512 x 512]\n{receipt_timestamp(item)}\n"
     title_font, body_font, meta_font, message_lines = receipt_layout(item)
     lines = [RECEIPT_TITLE, RECEIPT_SEPARATOR, *message_lines, RECEIPT_SEPARATOR, receipt_timestamp(item)]
     return "\n".join(lines) + "\n"
@@ -248,6 +257,8 @@ def write_receipt_png(item, text, printed_at):
     try:
         img = render_receipt_image(item).convert("RGB")
     except Exception as exc:
+        if item.get("kind") == "image":
+            raise
         print(f"archive png unavailable: {exc}", flush=True)
         return None
 
@@ -289,7 +300,7 @@ def archive_claimed(item):
     append_jsonl("claimed.jsonl", {
         "status": "claimed",
         "claimed_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-        "item": item,
+        "item": {k: v for k, v in item.items() if k != "raster"},
     })
 
 
@@ -343,14 +354,14 @@ def poll():
 
 
 def ack(item, raw_item=None):
-    return post_json("/api/ack", {"item": item, "rawItem": raw_item})
+    return post_json("/api/ack", {"item": {k: v for k, v in item.items() if k != "raster"}, "rawItem": raw_item})
 
 
 def fail(item, reason, raw_item=None, requeue=True):
     return post_json(
         "/api/fail",
         {
-            "item": item,
+            "item": {k: v for k, v in item.items() if k != "raster"},
             "rawItem": raw_item,
             "reason": reason,
             "requeue": requeue,

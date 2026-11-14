@@ -9,3 +9,7 @@ receipt-drop-poller.local.json
 *.log
 archive/
 archive-mirror/
+
+test-results/
+playwright-report/
+.vercel

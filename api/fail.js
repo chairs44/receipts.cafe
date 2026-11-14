@@ -63,7 +63,7 @@ export default async function handler(req, res) {
       await redisClient.lpush(QUEUE_KEY, serialized);
     }
 
-    await redisClient.lpush(FAILED_LOG_KEY, JSON.stringify({ ...item, failedAt, reason, requeued }));
+    await redisClient.lpush(FAILED_LOG_KEY, JSON.stringify({ ...item, raster: undefined, failedAt, reason, requeued }));
     await redisClient.ltrim(FAILED_LOG_KEY, 0, 199);
     await redisClient.set(LAST_FAILURE_KEY, failedAt, { ex: 7 * 24 * 60 * 60 });
 
