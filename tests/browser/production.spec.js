@@ -51,7 +51,7 @@ test('mobile image flow cancels and submits exactly the repositioned proof', asy
   await expect(page.locator('#receipt-results')).toContainText('Image queued.');
 });
 
-test('confirmed job exposes the worker PNG for viewing and download', async ({page}) => {
+test('confirmed job exposes the worker PNG as a native image', async ({page}) => {
   await page.route('**/api/submit', r => r.fulfill({json:{ok:true,token:'private-token'}}));
   await page.route('**/api/receipt', r => {
     expect(r.request().postDataJSON()).toEqual({token:'private-token'});
@@ -62,5 +62,8 @@ test('confirmed job exposes the worker PNG for viewing and download', async ({pa
   await page.getByRole('button',{name:'Send',exact:true}).click();
   await expect(page.locator('#receipt-results')).toContainText('Message printed.');
   await page.getByText('View receipt').click();
-  await expect(page.getByRole('link',{name:'Download receipt PNG'})).toHaveAttribute('href', /^data:image\/png;base64,/);
+  const image = page.getByRole('img', {name:'Printed message receipt'});
+  await expect(image).toBeVisible();
+  await expect(image).toHaveAttribute('src', /^data:image\/png;base64,/);
+  await expect(page.locator('#receipt-results [download]')).toHaveCount(0);
 });
