@@ -36,7 +36,7 @@ visitor
 
 1. A visitor types a message or selects **Upload Image**, adjusts the crop, and selects **Send**.
 2. The Vercel API validates it and places it in the Redis queue.
-3. The private poller claims the job and renders the text template or the exact 512 × 512 image proof locally.
+3. The private poller claims the job and renders the text template or the framed image receipt locally.
 4. CUPS prints the receipt. The job is acknowledged only after printing
    succeeds.
 5. If the printer is unavailable, the message stays queued. Stale in-flight
@@ -46,7 +46,7 @@ visitor
 
 JPEG, PNG and WebP files up to 10 MB and 24 megapixels open in the browser. Drag or use arrow keys to reposition the square crop. The preview applies Floyd–Steinberg dithering. Cancel returns to the text form.
 
-Only the visible 512 × 512 crop is submitted. The API accepts a fixed 32 KiB bitmap encoded as base64. Upstash holds it with the pending job. Submission and printed logs retain metadata. The Mac writes the same private dated PNG and text paths, event records, CSV index and configured mirror used for text receipts. The PNG contains the crop that was sent. Originals, filenames and image metadata stay on the visitor’s device.
+Only the visible 512 × 512 crop is submitted. The API accepts a fixed 32 KiB bitmap encoded as base64. Upstash holds it with the pending job. Submission and printed logs retain metadata. The Mac writes the same private dated PNG and text paths, event records, CSV index and configured mirror used for text receipts. The print and PNG share the same header, inset square crop, dashed frame and timestamp. The submitting page uses a private random token to check that job’s CUPS completion and offer the archived PNG for viewing and download. The Redis tracking record expires after 24 hours. Originals, filenames and image metadata stay on the visitor’s device.
 
 The production path uses the existing Redis queue. The older isolated image editor and its Blob integration are a separate development preview. Run `LOCAL_PRODUCTION_FORM=true npm run dev` for the release UI with local printer stubs.
 

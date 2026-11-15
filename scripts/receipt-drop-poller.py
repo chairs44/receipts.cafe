@@ -2,6 +2,7 @@
 import base64
 import json
 import os
+import re
 import csv
 import shutil
 import subprocess
@@ -140,7 +141,7 @@ def render_receipt_image(item):
         raster = base64.b64decode(item["raster"], validate=True)
         if len(raster) != 32768:
             raise ValueError("Invalid image receipt size")
-        return Image.frombytes("1", (512, 512), raster)
+        crop = Image.frombytes("1", (512, 512), raster)
 
     title_font, body_font, meta_font, message_lines = receipt_layout(item)
     img = Image.new("L", (RECEIPT_PIXEL_WIDTH, 2000), 255)
@@ -150,6 +151,23 @@ def render_receipt_image(item):
     draw_center(draw, y, RECEIPT_TITLE, title_font, tracking=TITLE_TRACKING)
     top_separator_y = y + 68
     draw_center(draw, top_separator_y, RECEIPT_SEPARATOR, meta_font)
+
+    if item.get("kind") == "image":
+        # Use the actual printed separator as the four sides of the frame.
+        rule = img.crop((0, top_separator_y, RECEIPT_PIXEL_WIDTH, top_separator_y + 50))
+        ink = rule.point(lambda value: 255 if value < 210 else 0).getbbox()
+        strip = rule.crop(ink)
+        side = strip.width
+        left = (RECEIPT_PIXEL_WIDTH - side) // 2
+        top = top_separator_y + ink[1]
+        img.paste(strip.rotate(90, expand=True), (left, top))
+        img.paste(strip.rotate(90, expand=True), (left + side - strip.height, top))
+        img.paste(strip, (left, top + side - strip.height))
+        inset = 8
+        img.paste(crop.convert("L").resize((side - 2*inset, side - 2*inset), Image.Resampling.NEAREST), (left + inset, top + inset))
+        footer = top_separator_y + side - strip.height + 70
+        draw_center(draw, footer, receipt_timestamp(item), meta_font)
+        return img.crop((0, 0, RECEIPT_PIXEL_WIDTH, footer + 38 + RECEIPT_BOTTOM_MARGIN)).point(lambda p: 0 if p < 210 else 255, "1")
 
     line_step = 38
     visual_gap = 41
@@ -319,6 +337,7 @@ def archive_printed(item, text):
     }
     append_jsonl("printed.jsonl", record)
     update_csv(record)
+    return image_rel
 
 
 def archive_failed(item, reason, requeued=True):
@@ -415,14 +434,16 @@ def print_receipt(item):
         temp = Path(f.name)
     try:
         if PRINT_MODE == "local":
-            subprocess.run(["lp", "-o", "raw", "-d", PRINTER, str(temp)], check=True)
+            result = subprocess.run(["lp", "-o", "raw", "-d", PRINTER, str(temp)], check=True, stdout=subprocess.PIPE)
         else:
             remote = f"/tmp/receipt-drop-{temp.name}"
             subprocess.run(["scp", str(temp), f"{SSH_HOST}:{remote}"], check=True)
-            subprocess.run(
+            result = subprocess.run(
                 ["ssh", SSH_HOST, f"lp -o raw -d {PRINTER} {remote}; status=$?; rm -f {remote}; exit $status"],
-                check=True,
+                check=True, stdout=subprocess.PIPE,
             )
+        match = re.search(re.escape(PRINTER.encode()) + rb"-(\d+)\b", result.stdout)
+        return match.group(1).decode() if match else None
     finally:
         temp.unlink(missing_ok=True)
 
@@ -431,7 +452,7 @@ def print_and_ack(item, raw_item=None):
     archive_claimed(item)
     text = render(item)
     try:
-        print_receipt(item)
+        job = print_receipt(item)
     except Exception as exc:
         reason = f"{type(exc).__name__}: {exc}"
         print(f"print failed for {item.get('id')}: {reason}", flush=True)
@@ -442,7 +463,15 @@ def print_and_ack(item, raw_item=None):
             print(f"fail endpoint error for {item.get('id')}: {fail_exc}", flush=True)
         return
 
-    archive_printed(item, text)
+    png = archive_printed(item, text)
+    key = item.get("trackingKey", "")
+    if job and png and re.fullmatch(r"[a-f0-9]{64}", key):
+        directory = ARCHIVE_DIR.parent / "pending-confirmations"
+        directory.mkdir(exist_ok=True)
+        pending = directory / (key + ".json")
+        temp = pending.with_suffix(".tmp")
+        temp.write_text(json.dumps({"job":job, "png":str(png)}))
+        temp.replace(pending)
     try:
         ack(item, raw_item)
         print(f"printed, archived, and acked {item.get('id')}", flush=True)
@@ -450,11 +479,36 @@ def print_and_ack(item, raw_item=None):
         print(f"ack endpoint error for {item.get('id')}: {ack_exc}", flush=True)
 
 
+def publish_confirmations():
+    for path in (ARCHIVE_DIR.parent / "pending-confirmations").glob("*.json"):
+        try:
+            if time.time() - path.stat().st_mtime > 86400:
+                path.unlink()
+                continue
+            record = json.loads(path.read_text())
+            command = ["ipptool", "-tv", "ipp://localhost/jobs/" + record["job"],
+                       "/usr/share/cups/ipptool/get-job-attributes.test"]
+            if PRINT_MODE != "local":
+                command = ["ssh", SSH_HOST] + command
+            output = subprocess.check_output(command, timeout=8).decode()
+            state = re.search(r"job-state \(enum\) = (\S+)", output)
+            if not state or state[1] not in ("completed", "aborted", "canceled"):
+                continue
+            body = {"trackingKey": path.stem, "state": "failed"}
+            if state[1] == "completed":
+                body.update(state="printed", png=base64.b64encode((ARCHIVE_DIR / record["png"]).read_bytes()).decode())
+            post_json("/api/receipt", body)
+            path.unlink()
+        except Exception as exc:
+            print(f"receipt confirmation pending: {type(exc).__name__}", flush=True)
+
+
 def main():
     if not URL or not TOKEN:
         raise SystemExit("Set RECEIPT_DROP_URL and RECEIPT_DROP_TOKEN.")
     while True:
         try:
+            publish_confirmations()
             online = printer_online()
             try:
                 send_heartbeat(online)

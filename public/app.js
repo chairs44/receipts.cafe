@@ -168,11 +168,8 @@ form.addEventListener("submit", async (event) => {
     if (!response.ok || !data.ok) throw new Error(data.error || "Could not send.");
     message.value = "";
     updateCount();
-    setStatus(
-      printerOnline
-        ? "Your message will print on David's printer momentarily."
-        : "Your message will print on David's printer once it comes back online."
-    );
+    setStatus("");
+    trackReceipt(data.token, "Message");
   } catch (error) {
     setStatus(error.message || "Could not send.", "error");
   } finally {

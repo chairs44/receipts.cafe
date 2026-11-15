@@ -28,7 +28,9 @@ class ArchiveTest(unittest.TestCase):
                 self.assertTrue((Path(d)/row["receipt_text_path"]).exists())
                 self.assertEqual(png.read_bytes(),(Path(d)/"mirror"/row["receipt_image_path"]).read_bytes())
             with Image.open(Path(d)/rows[1]["receipt_image_path"]) as png:
-                self.assertEqual(png.convert("1").tobytes(),pixels)
-            self.assertIn(bytes(b ^ 255 for b in pixels),worker.render_escpos(image))
+                self.assertEqual(png.width, 512)
+                self.assertGreater(png.height, 512)
+                self.assertEqual(png.convert("1").tobytes(), worker.render_receipt_image(image).tobytes())
+            self.assertIn(worker.raster_bytes(worker.render_receipt_image(image))[2],worker.render_escpos(image))
             self.assertIn("archive-check",(Path(d)/"exports/receipt-cafe-log.csv").read_text())
             self.assertNotIn("raster",(Path(d)/"events/claimed.jsonl").read_text())

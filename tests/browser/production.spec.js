@@ -13,6 +13,7 @@ test('production form submits text to the printer route and omits the editor', a
   expect(new URL(request.url()).pathname).toBe('/api/submit');
   expect(request.postDataJSON()).toEqual({ message: 'Local routing test', website: '' });
   await expect(page.locator('#message')).toHaveValue('');
+  await expect(page.locator("#receipt-results")).toContainText("Message queued.");
   expect(paths).not.toContain('/api/image-submit');
   expect((await page.request.get('/image-editor.js')).status()).toBe(404);
 });
@@ -47,5 +48,19 @@ test('mobile image flow cancels and submits exactly the repositioned proof', asy
   const request = page.waitForRequest(r=>r.method()==='POST');
   await page.locator('#image-send').click();
   expect((await request).postDataJSON()).toEqual({kind:'image',raster:expected});
-  await expect(page.locator('#status')).toHaveText('Your image is queued for printing.');
+  await expect(page.locator('#receipt-results')).toContainText('Image queued.');
+});
+
+test('confirmed job exposes the worker PNG for viewing and download', async ({page}) => {
+  await page.route('**/api/submit', r => r.fulfill({json:{ok:true,token:'private-token'}}));
+  await page.route('**/api/receipt', r => {
+    expect(r.request().postDataJSON()).toEqual({token:'private-token'});
+    return r.fulfill({json:{state:'printed',png:'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl6l90AAAAASUVORK5CYII='}});
+  });
+  await page.goto('/');
+  await page.locator('#message').fill('local confirmation');
+  await page.getByRole('button',{name:'Send',exact:true}).click();
+  await expect(page.locator('#receipt-results')).toContainText('Message printed.');
+  await page.getByText('View receipt').click();
+  await expect(page.getByRole('link',{name:'Download receipt PNG'})).toHaveAttribute('href', /^data:image\/png;base64,/);
 });

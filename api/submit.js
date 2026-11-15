@@ -15,7 +15,7 @@ function envValue(...names) {
   return undefined;
 }
 
-function getRedis() {
+export function getRedis() {
   if (!redis) {
     const url = envValue(
       "UPSTASH_REDIS_REST_KV_REST_API_URL",
@@ -151,13 +151,16 @@ export default async function handler(req, res) {
       ...(isImage ? {kind:"image", width:512, height:512, sha256:createHash("sha256").update(Buffer.from(body.raster, "base64")).digest("hex")} : {}),
     };
 
+    const token = randomUUID();
+    const trackingKey = createHash("sha256").update(token).digest("hex");
     const tx = redisClient.multi();
-    tx.rpush(QUEUE_KEY, JSON.stringify(isImage ? {...item, raster:body.raster} : item));
+    tx.set("receipt-drop:view:" + trackingKey, { state: "queued" }, { ex: 86400 });
+    tx.rpush(QUEUE_KEY, JSON.stringify({...item, trackingKey, ...(isImage ? {raster:body.raster} : {})}));
     tx.lpush(LOG_KEY, JSON.stringify(item));
     tx.ltrim(LOG_KEY, 0, LOG_RETENTION - 1);
     await tx.exec();
 
-    return res.status(200).json({ ok: true });
+    return res.status(200).json({ ok: true, token });
   } catch (error) {
     console.error("receipt submit failed", {
       message: error?.message,

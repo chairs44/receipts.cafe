@@ -537,3 +537,8 @@ body.modal-open {
 #tone input::-webkit-slider-thumb { appearance:none; width:9px; height:16px; margin-top:-7px; background:var(--text); }
 #tone input::-moz-range-thumb { width:9px; height:16px; border:0; border-radius:0; background:var(--text); }
 #tone input:focus-visible { outline:1px solid var(--text); outline-offset:2px; }
+
+#receipt-results details { margin-top: .4rem; }
+#receipt-results summary { cursor: pointer; }
+#receipt-results img { display: block; width: min(100%, 320px); height: auto; margin: .65rem auto; }
+#receipt-results a { display: inline-flex; padding: .5rem; color: inherit; }

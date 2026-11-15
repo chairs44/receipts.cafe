@@ -153,7 +153,8 @@ form.onsubmit = async e => {
     if (!response.ok || !result.ok) throw Error(result.error || 'Could not send.');
     sending = false;
     showText();
-    byId('status').textContent = 'Your image is queued for printing.';
+    byId('status').textContent = '';
+    window.trackReceipt(result.token, 'Image');
   } catch (error) { status.textContent = error.message; }
   finally { tone.disabled = sending = discard.disabled = back.disabled = false; send.disabled = !raster; }
 };
