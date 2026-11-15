@@ -99,8 +99,8 @@ export default async function handler(req, res) {
     if (body.website) return res.status(200).json({ ok: true });
 
     const maxChars = settingInt("MESSAGE_MAX_CHARS", 300);
-    const rateMax = settingInt("RATE_LIMIT_MAX", 3);
-    const rateWindow = settingInt("RATE_LIMIT_WINDOW_SECONDS", 3600);
+    const rateMax = settingInt("RATE_LIMIT_MAX", 5);
+    const rateWindow = settingInt("RATE_LIMIT_WINDOW_SECONDS", 1800);
     const dailyLimit = settingInt("DAILY_LIMIT", 100);
     const dailyIpLimit = settingInt("DAILY_IP_LIMIT", 10);
     const isImage = body.kind === "image";
@@ -116,7 +116,7 @@ export default async function handler(req, res) {
 
     const redisClient = getRedis();
     const ipHash = createHash("sha256").update(String(clientIp(req))).digest("hex").slice(0, 20);
-    const rateKey = `receipt-drop:rate:${ipHash}`;
+    const rateKey = `receipt-drop:rate:${rateWindow}:${ipHash}`;
     const day = new Date().toISOString().slice(0, 10);
     const dailyKey = `receipt-drop:daily:${day}`;
     const dailyIpKey = `receipt-drop:daily:${day}:${ipHash}`;
