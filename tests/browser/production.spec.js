@@ -51,19 +51,39 @@ test('mobile image flow cancels and submits exactly the repositioned proof', asy
   await expect(page.locator('#receipt-results')).toContainText('Image queued.');
 });
 
-test('confirmed job exposes the worker PNG as a native image', async ({page}) => {
+test('confirmed receipt appears automatically above the X link on a short mobile screen', async ({page}) => {
+  await page.setViewportSize({width:320,height:568});
+  await page.emulateMedia({reducedMotion:'reduce'});
+  const sharp = (await import('sharp')).default;
+  const receipt = await sharp({create:{width:512,height:655,channels:3,background:'white'}}).png().toBuffer();
+  let confirmPrint;
+  const confirmation = new Promise(resolve => { confirmPrint = resolve; });
   await page.route('**/api/submit', r => r.fulfill({json:{ok:true,token:'private-token'}}));
-  await page.route('**/api/receipt', r => {
+  await page.route('**/api/receipt', async r => {
     expect(r.request().postDataJSON()).toEqual({token:'private-token'});
-    return r.fulfill({json:{state:'printed',png:'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl6l90AAAAASUVORK5CYII='}});
+    await confirmation;
+    return r.fulfill({json:{state:'printed',png:receipt.toString('base64')}});
   });
   await page.goto('/');
   await page.locator('#message').fill('local confirmation');
   await page.getByRole('button',{name:'Send',exact:true}).click();
-  await expect(page.locator('#receipt-results')).toContainText('Message printed.');
-  await page.getByText('View receipt').click();
   const image = page.getByRole('img', {name:'Printed message receipt'});
+  try {
+    await expect(page.locator('#receipt-results')).toContainText('Message queued.');
+    await expect(image).toHaveCount(0);
+  } finally {
+    confirmPrint();
+  }
+  await expect(page.locator('#receipt-results')).toContainText('Message printed.');
   await expect(image).toBeVisible();
   await expect(image).toHaveAttribute('src', /^data:image\/png;base64,/);
+  await expect(page.getByText('View receipt')).toHaveCount(0);
   await expect(page.locator('#receipt-results [download]')).toHaveCount(0);
+
+  const link = page.getByRole('link', {name:'chairs44 on X'});
+  await link.scrollIntoViewIfNeeded();
+  await expect(link).toBeInViewport({ratio:1});
+  const preview = await page.locator('.receipt-preview').boundingBox();
+  const footer = await link.boundingBox();
+  expect(footer.y).toBeGreaterThanOrEqual(preview.y + preview.height);
 });

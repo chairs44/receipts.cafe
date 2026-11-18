@@ -3,11 +3,13 @@ import { monochrome } from './image-processing.js';
 const byId = id => document.getElementById(id);
 const form = byId('image-form'), textForm = byId('drop-form'), picker = byId('image-picker');
 const file = byId('pick-file'), canvas = byId('proof'), send = byId('image-send');
+const proofWindow = byId('proof-window'), colorWindow = byId('proof-color-window'), colorCanvas = byId('proof-color');
 const discard = byId('discard'), back = byId('back-text'), open = byId('upload-image');
 const status = byId('image-status'), hint = byId('crop-help'), heading = document.querySelector('h1');
 const originalTitle = heading.textContent.trim(), originalHint = hint.textContent;
 const ctx = canvas.getContext('2d', {willReadFrequently:true});
 const tone = byId("tone"), brightness = byId("brightness"), contrast = byId("contrast");
+const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 const pointers = new Map();
 let source, raster, revision = 0, frame = 0, x = 0, y = 0, width, height, sending = false;
 
@@ -21,7 +23,7 @@ function reset() {
   brightness.value = contrast.value = '0';
   file.value = '';
   picker.hidden = false;
-  canvas.hidden = discard.hidden = true;
+  proofWindow.hidden = colorWindow.hidden = discard.hidden = true;
   send.disabled = true;
   hint.textContent = originalHint;
   status.textContent = '';
@@ -45,10 +47,11 @@ open.onclick = () => {
 };
 back.onclick = discard.onclick = showText;
 
-function paint() {
+function paint(showColor = false) {
   ctx.fillStyle = '#fff';
   ctx.fillRect(0, 0, 512, 512);
   ctx.drawImage(source, x, y, width, height);
+  if (showColor) colorCanvas.getContext('2d').drawImage(canvas, 0, 0, colorCanvas.width, colorCanvas.height);
   const data = ctx.getImageData(0, 0, 512, 512);
   const pixels = monochrome(data.data, 512, 512, Number(brightness.value), Number(contrast.value));
   const packed = new Uint8Array(32768);
@@ -75,26 +78,33 @@ async function select(image) {
     width = bitmap.width*scale; height = bitmap.height*scale;
     x = (512-width)/2; y = (512-height)/2;
     picker.hidden = true;
-    canvas.hidden = discard.hidden = false;
+    proofWindow.hidden = discard.hidden = false;
     tone.hidden = false;
     hint.textContent = 'Drag to crop · Pinch or scroll to zoom';
-    paint();
+    const animateSelection = !reducedMotion.matches;
+    paint(animateSelection);
+    colorWindow.hidden = !animateSelection;
     canvas.focus();
   } catch (error) {
     if (current === revision) { reset(); status.textContent = error.message; }
   }
 }
+colorWindow.addEventListener('animationend', event => {
+  if (event.target === colorWindow) colorWindow.hidden = true;
+});
+reducedMotion.addEventListener('change', () => { colorWindow.hidden = true; });
 file.onchange = () => select(file.files[0]);
 const box = byId('image-box');
 box.ondragover = e => e.preventDefault();
 box.ondrop = e => { e.preventDefault(); if (!source) select(e.dataTransfer.files[0]); };
 function move(dx, dy) {
   if (!source || sending) return;
+  colorWindow.hidden = true;
   x = Math.max(512-width, Math.min(0, x+dx));
   y = Math.max(512-height, Math.min(0, y+dy));
   send.disabled = true;
   cancelAnimationFrame(frame);
-  frame = requestAnimationFrame(paint);
+  frame = requestAnimationFrame(() => paint());
 }
 tone.oninput = () => move(0, 0);
 

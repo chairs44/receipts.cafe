@@ -25,14 +25,25 @@ function trackReceipt(token, label) {
       }
       if (result.state === "printed") {
         notice.textContent = label + " printed.";
-        const details = document.createElement("details");
-        const view = document.createElement("summary");
-        view.textContent = "View receipt";
         const image = new Image();
         image.src = "data:image/png;base64," + result.png;
         image.alt = "Printed " + label.toLowerCase() + " receipt";
-        details.append(view, image);
-        row.append(details);
+        try {
+          await image.decode();
+        } catch {
+          notice.textContent += " Receipt preview unavailable.";
+          return;
+        }
+        const preview = document.createElement("div");
+        preview.className = "receipt-preview";
+        const receiptWindow = document.createElement("div");
+        receiptWindow.className = "receipt-window";
+        const paper = document.createElement("div");
+        paper.className = "receipt-paper";
+        paper.append(image);
+        receiptWindow.append(paper);
+        preview.append(receiptWindow);
+        row.append(preview);
         return;
       }
       notice.textContent = label + " queued.";

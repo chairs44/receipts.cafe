@@ -44,7 +44,12 @@
         <form id="image-form" hidden>
           <div id="image-box">
             <div id="image-picker"><label for="pick-file">Choose image</label><input id="pick-file" type="file" accept="image/png,image/jpeg,image/webp"><small>or drop one here</small></div>
-            <canvas id="proof" width="512" height="512" tabindex="0" aria-label="Crop preview. Drag or use arrow keys to reposition. Pinch or use plus and minus to zoom." hidden></canvas>
+            <div id="proof-window" hidden>
+              <canvas id="proof" width="512" height="512" tabindex="0" aria-label="Crop preview. Drag or use arrow keys to reposition. Pinch or use plus and minus to zoom."></canvas>
+              <div id="proof-color-window" aria-hidden="true" hidden>
+                <canvas id="proof-color" width="36" height="36"></canvas>
+              </div>
+            </div>
             <button type="button" id="discard" aria-label="Cancel image and return to text" hidden>×</button>
           </div>
           <small id="crop-help">JPEG, PNG or WebP · up to 10 MB</small>
@@ -66,8 +71,8 @@
       rel="noopener noreferrer"
       aria-label="chairs44 on X"
     >
-      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+      <svg viewBox="0 0 1200 1227" aria-hidden="true" focusable="false">
+        <path d="M714.163 519.284L1160.89 0H1055.03L667.137 450.887L357.328 0H0L468.492 681.821L0 1226.37H105.866L515.491 750.218L842.672 1226.37H1200L714.137 519.284H714.163ZM569.165 687.828L521.697 619.934L144.011 79.6944H306.615L611.412 515.685L658.88 583.579L1055.08 1150.3H892.476L569.165 687.854V687.828Z"/>
       </svg>
       <span class="sr-only">chairs44 on X</span>
     </a>
